@@ -14,8 +14,23 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.taxaccountrouter.controllers
-
-class RouterController {
-
-}
+//package uk.gov.hmrc.taxaccountrouter.controllers
+//
+//import play.api.mvc.{AnyContent, Controller, Request, Result}
+//import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
+//import uk.gov.hmrc.play.frontend.auth.{Actions, AllowAll, AuthContext}
+//import uk.gov.hmrc.taxaccountrouter.connectors.RouterAuthConnector
+//
+//import scala.concurrent.Future
+//
+//class RouterController extends Controller with Actions {
+////  override protected def authConnector: AuthConnector = RouterAuthConnector
+//
+////  val account = AuthenticatedBy(RouterAuthenticationProvider, AllowAll).async {
+////    implicit authContext => request => route(authContext, request)
+////  }
+//
+//  def route(implicit authContext: AuthContext, request: Request[AnyContent]):Future[Result] = {
+//    return Future.failed(new NotImplementedError())
+//  }
+//}

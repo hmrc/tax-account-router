@@ -14,8 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.taxaccountrouter.connectors
+package uk.gov.hmrc.taxaccountrouter.config
 
-class AuditConnector {
+import com.typesafe.config.Config
+import play.api.Mode.Mode
+import play.api.{Configuration, Play}
 
+trait ConfigurationBase {
+  protected def mode: Mode = Play.current.mode
+  protected def runModeConfiguration: Configuration = ???
+  protected def configuration: Option[Config] = ???
+  protected def appNameConfiguration: Configuration = ???
 }
