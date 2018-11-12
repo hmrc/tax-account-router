@@ -25,7 +25,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads}
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.taxaccountrouter.auth.UserAuthority
+import uk.gov.hmrc.taxaccountrouter.auth.{EnrolmentIdentifier, GovernmentGatewayEnrolment, InternalUserIdentifier, UserAuthority}
 import uk.gov.hmrc.taxaccountrouter.config.HttpClient
 
 class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures {
@@ -35,7 +35,6 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
   "currentUserAuthority" should {
     "execute call to auth microservice to get the authority" in {
       val mockHttp:HttpClient = mock[HttpClient]
-
       val authUrl = "auth-service-url"
       val connector = new RouterAuthConnector {
         override def http:HttpClient = mockHttp
@@ -46,6 +45,57 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
       val result = await(connector.currentUserAuthority)
       result shouldBe authResponse
       verify(mockHttp).GET(eqTo(s"$authUrl/auth/authority"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])
+    }
+  }
+
+  "userAuthority" should {
+    "execute call to auth microservice to get the authority" in {
+      val mockHttp:HttpClient = mock[HttpClient]
+      val authUrl = "auth-service-url"
+      val credId = "credId"
+      val connector = new RouterAuthConnector {
+        override def http:HttpClient = mockHttp
+        override def serviceUrl:String = authUrl
+      }
+      val authResponse = UserAuthority(None, Some(""), Some(""), None, CredentialStrength.None, None, None)
+      when(mockHttp.GET(eqTo(s"$authUrl/auth/gg/$credId"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(authResponse))
+      val result = await(connector.userAuthority(credId))
+      result shouldBe authResponse
+      verify(mockHttp).GET(eqTo(s"$authUrl/auth/gg/$credId"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])
+    }
+  }
+
+  "getIds" should {
+    "execute call to auth microservice to get the InternalUserIdentifier" in {
+      val mockHttp:HttpClient = mock[HttpClient]
+      val authUrl = "auth-service-url"
+      val ids = "1"
+      val connector = new RouterAuthConnector {
+        override def http:HttpClient = mockHttp
+        override def serviceUrl:String = authUrl
+      }
+      val authResponse = InternalUserIdentifier("")
+      when(mockHttp.GET(eqTo(s"$authUrl$ids"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(authResponse))
+      val result = await(connector.getIds(ids))
+      result shouldBe authResponse
+      verify(mockHttp).GET(eqTo(s"$authUrl$ids"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])
+    }
+  }
+
+  "getEnrolments" should {
+    "execute call to auth microservice to get the GovernmentGatewayEnrolment" in {
+      val mockHttp:HttpClient = mock[HttpClient]
+      val authUrl = "auth-service-url"
+      val enrolment = "1"
+      val connector = new RouterAuthConnector {
+        override def http:HttpClient = mockHttp
+        override def serviceUrl:String = authUrl
+      }
+      val authResponse = Seq(GovernmentGatewayEnrolment("1", Seq(EnrolmentIdentifier("1", "test")), ""))
+      when(mockHttp.GET(eqTo(s"$authUrl$enrolment"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(authResponse))
+      val result = await(connector.getEnrolments(enrolment))
+      result shouldBe authResponse
+      verify(mockHttp).GET(eqTo(s"$authUrl$enrolment"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])
     }
   }
 }

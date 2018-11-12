@@ -16,11 +16,21 @@
 
 package uk.gov.hmrc.taxaccountrouter.auth
 
-import play.api.libs.json.{Reads, __}
+import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.mockito.MockitoSugar
+import play.api.libs.json.Json
+import uk.gov.hmrc.play.test.UnitSpec
 
-case class InternalUserIdentifier(internalId: String) extends AnyVal
+class InternalUserIdentifierSpec extends UnitSpec with MockitoSugar with ScalaFutures {
+  "responses for InternalUserIdentifiers" should {
+    "parse correctly into the InternalUserIdentifier domain object" in {
+      val internalId = "5658962a3d00003d002f3ca1"
+      val authResponse =
+        s"""{
+           |    "internalId": "$internalId"
+           |    }""".stripMargin
 
-object InternalUserIdentifier {
-  implicit val reads: Reads[InternalUserIdentifier] = (__ \ "internalId").read[String].map(InternalUserIdentifier(_))
-  implicit def convertToString(id: InternalUserIdentifier): String = id.internalId
+      Json.parse(authResponse).as[InternalUserIdentifier] shouldBe InternalUserIdentifier(internalId)
+    }
+  }
 }
