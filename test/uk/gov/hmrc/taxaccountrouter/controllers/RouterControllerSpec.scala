@@ -16,15 +16,20 @@
 
 package uk.gov.hmrc.taxaccountrouter.controllers
 
-import javax.inject.{Inject, Singleton}
-import play.api.mvc.ControllerComponents
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import org.scalatest._
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.http.Status
+import play.api.test.FakeRequest
+import play.api.test.Helpers._
 
-import scala.concurrent.{ExecutionContext, Future}
+class RouterControllerSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite with OptionValues  {
 
-@Singleton()
-class MicroserviceHelloWorld @Inject()(cc: ControllerComponents)(implicit ec:ExecutionContext) extends BackendController(cc) {
-	def hello() = Action.async { implicit request =>
-		Future.successful(Ok("Hello world"))
-	}
+  lazy val fakeRequest = FakeRequest("GET", routes.RouterController.hello().url)
+
+  "GET /tax-account-router/hello-world" - {
+    "return OK" in {
+      val result = route(app, fakeRequest).value
+      status(result) mustEqual Status.OK
+    }
+  }
 }
