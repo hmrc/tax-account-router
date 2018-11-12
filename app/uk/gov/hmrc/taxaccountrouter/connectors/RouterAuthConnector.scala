@@ -19,11 +19,11 @@ package uk.gov.hmrc.taxaccountrouter.connectors
 import uk.gov.hmrc.http.{HeaderCarrier, HttpGet}
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.taxaccountrouter.auth.{GovernmentGatewayEnrolment, InternalUserIdentifier, UserAuthority}
-import uk.gov.hmrc.taxaccountrouter.config.{ConfigurationBase, WSHttpClient}
+import uk.gov.hmrc.taxaccountrouter.config.WSHttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait RouterAuthConnector extends ServicesConfig with ConfigurationBase {
+trait RouterAuthConnector extends ServicesConfig {
   def http: HttpGet
   def serviceUrl: String
 

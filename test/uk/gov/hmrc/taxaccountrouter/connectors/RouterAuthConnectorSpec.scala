@@ -33,69 +33,89 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
   implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
   "currentUserAuthority" should {
+    val mockHttp:HttpClient = mock[HttpClient]
+    val authUrl = "auth-service-url"
+    val connector:RouterAuthConnector = new RouterAuthConnector {
+      override def http:HttpClient = mockHttp
+      override def serviceUrl:String = authUrl
+    }
     "execute call to auth microservice to get the authority" in {
-      val mockHttp:HttpClient = mock[HttpClient]
-      val authUrl = "auth-service-url"
-      val connector = new RouterAuthConnector {
-        override def http:HttpClient = mockHttp
-        override def serviceUrl:String = authUrl
-      }
       val authResponse = UserAuthority(None, Some(""), Some(""), None, CredentialStrength.None, None, None)
       when(mockHttp.GET(eqTo(s"$authUrl/auth/authority"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(authResponse))
       val result = await(connector.currentUserAuthority)
       result shouldBe authResponse
       verify(mockHttp).GET(eqTo(s"$authUrl/auth/authority"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])
     }
+    "execute call to auth microservice passes up an exception" in {
+      when(mockHttp.GET(eqTo(s"$authUrl/auth/authority"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
+      val result = intercept[RuntimeException](await(connector.currentUserAuthority))
+      result.getMessage shouldBe "error.resource_access_failure"
+    }
   }
 
   "userAuthority" should {
+    val mockHttp:HttpClient = mock[HttpClient]
+    val authUrl = "auth-service-url"
+    val credId = "credId"
+    val connector:RouterAuthConnector = new RouterAuthConnector {
+      override def http:HttpClient = mockHttp
+      override def serviceUrl:String = authUrl
+    }
     "execute call to auth microservice to get the authority" in {
-      val mockHttp:HttpClient = mock[HttpClient]
-      val authUrl = "auth-service-url"
-      val credId = "credId"
-      val connector = new RouterAuthConnector {
-        override def http:HttpClient = mockHttp
-        override def serviceUrl:String = authUrl
-      }
       val authResponse = UserAuthority(None, Some(""), Some(""), None, CredentialStrength.None, None, None)
       when(mockHttp.GET(eqTo(s"$authUrl/auth/gg/$credId"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(authResponse))
       val result = await(connector.userAuthority(credId))
       result shouldBe authResponse
       verify(mockHttp).GET(eqTo(s"$authUrl/auth/gg/$credId"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])
     }
+    "execute call to auth microservice passes up an exception" in {
+      when(mockHttp.GET(eqTo(s"$authUrl/auth/gg/$credId"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
+      val result = intercept[RuntimeException](await(connector.userAuthority(credId)))
+      result.getMessage shouldBe "error.resource_access_failure"
+    }
   }
 
   "getIds" should {
+    val mockHttp:HttpClient = mock[HttpClient]
+    val authUrl = "auth-service-url"
+    val ids = "1"
+    val connector:RouterAuthConnector = new RouterAuthConnector {
+      override def http:HttpClient = mockHttp
+      override def serviceUrl:String = authUrl
+    }
     "execute call to auth microservice to get the InternalUserIdentifier" in {
-      val mockHttp:HttpClient = mock[HttpClient]
-      val authUrl = "auth-service-url"
-      val ids = "1"
-      val connector = new RouterAuthConnector {
-        override def http:HttpClient = mockHttp
-        override def serviceUrl:String = authUrl
-      }
       val authResponse = InternalUserIdentifier("")
       when(mockHttp.GET(eqTo(s"$authUrl$ids"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(authResponse))
       val result = await(connector.getIds(ids))
       result shouldBe authResponse
       verify(mockHttp).GET(eqTo(s"$authUrl$ids"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])
     }
+    "execute call to auth microservice passes up an exception" in {
+      when(mockHttp.GET(eqTo(s"$authUrl$ids"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
+      val result = intercept[RuntimeException](await(connector.getIds(ids)))
+      result.getMessage shouldBe "error.resource_access_failure"
+    }
   }
 
   "getEnrolments" should {
+    val mockHttp:HttpClient = mock[HttpClient]
+    val authUrl = "auth-service-url"
+    val enrolment = "1"
+    val connector:RouterAuthConnector = new RouterAuthConnector {
+      override def http:HttpClient = mockHttp
+      override def serviceUrl:String = authUrl
+    }
     "execute call to auth microservice to get the GovernmentGatewayEnrolment" in {
-      val mockHttp:HttpClient = mock[HttpClient]
-      val authUrl = "auth-service-url"
-      val enrolment = "1"
-      val connector = new RouterAuthConnector {
-        override def http:HttpClient = mockHttp
-        override def serviceUrl:String = authUrl
-      }
       val authResponse = Seq(GovernmentGatewayEnrolment("1", Seq(EnrolmentIdentifier("1", "test")), ""))
       when(mockHttp.GET(eqTo(s"$authUrl$enrolment"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(authResponse))
       val result = await(connector.getEnrolments(enrolment))
       result shouldBe authResponse
       verify(mockHttp).GET(eqTo(s"$authUrl$enrolment"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])
+    }
+    "execute call to auth microservice passes up an exception" in {
+      when(mockHttp.GET(eqTo(s"$authUrl$enrolment"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
+      val result = intercept[RuntimeException](await(connector.getEnrolments(enrolment)))
+      result.getMessage shouldBe "error.resource_access_failure"
     }
   }
 }

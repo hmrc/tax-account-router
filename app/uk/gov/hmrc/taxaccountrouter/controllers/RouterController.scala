@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-
 package uk.gov.hmrc.taxaccountrouter.controllers
 
 import javax.inject.{Inject, Singleton}
-import play.api.mvc.{ControllerComponents, _}
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
+
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class RouterController @Inject()(cc: ControllerComponents)(implicit ec:ExecutionContext) extends BackendController(cc) {
-  def hello() = Action.async { implicit request =>
+  def hello():Action[AnyContent] = Action.async { implicit request =>
     Future.successful(Ok("Hello world"))
   }
 }

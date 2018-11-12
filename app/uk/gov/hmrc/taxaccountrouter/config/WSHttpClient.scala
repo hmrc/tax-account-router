@@ -16,9 +16,12 @@
 
 package uk.gov.hmrc.taxaccountrouter.config
 
+import com.typesafe.config.Config
+import play.api.libs.ws.WSClient
 import uk.gov.hmrc.play.config.{AppName, RunMode}
 import uk.gov.hmrc.play.http.ws.{WSGet, WSPost}
 
-object WSHttpClient extends HttpClient with WSGet with WSPost with RunMode with Hooks with AppName with ConfigurationBase {
-
+object WSHttpClient extends HttpClient with WSGet with WSPost with RunMode with Hooks with AppName {
+  override def configuration: Option[Config] = None
+  override def wsClient: WSClient = ???
 }
