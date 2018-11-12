@@ -16,19 +16,15 @@
 
 package uk.gov.hmrc.taxaccountrouter.controllers
 
-import javax.inject.Singleton
+import javax.inject.{Inject, Singleton}
+import play.api.mvc.ControllerComponents
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
-import play.api.mvc._
-
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton()
-class MicroserviceHelloWorld extends BaseController {
-
+class MicroserviceHelloWorld @Inject()(cc: ControllerComponents)(implicit ec:ExecutionContext) extends BackendController(cc) {
 	def hello() = Action.async { implicit request =>
 		Future.successful(Ok("Hello world"))
 	}
-
 }

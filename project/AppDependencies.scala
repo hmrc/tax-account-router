@@ -1,13 +1,14 @@
 import play.core.PlayVersion.current
 import play.sbt.PlayImport._
+import play.sbt.PlayImport.ws
 import sbt.Keys.libraryDependencies
 import sbt._
 
 object AppDependencies {
 
   val compile = Seq(
-
-    "uk.gov.hmrc"             %% "bootstrap-play-25"        % "3.14.0"
+    ws,
+    "uk.gov.hmrc"             %% "bootstrap-play-26"        % "0.26.0"
   )
 
   val test = Seq(

@@ -16,22 +16,21 @@
 
 package uk.gov.hmrc.taxaccountrouter.controllers
 
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest._
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.Status
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 
-class MicroserviceHelloWorldControllerSpec extends WordSpec with Matchers with GuiceOneAppPerSuite {
 
-  val fakeRequest = FakeRequest("GET", "/")
+class MicroserviceHelloWorldControllerSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite with OptionValues  {
 
-  "GET /" should {
-    "return 200" in {
-      val controller = new MicroserviceHelloWorld()
-      val result = controller.hello()(fakeRequest)
-      status(result) shouldBe Status.OK
+  lazy val fakeRequest = FakeRequest("GET", routes.MicroserviceHelloWorld.hello().url)
+
+  "GET /tax-account-router/hello-world" - {
+    "return OK" in {
+      val result = route(app, fakeRequest).value
+      status(result) mustEqual Status.OK
     }
   }
-
 }
