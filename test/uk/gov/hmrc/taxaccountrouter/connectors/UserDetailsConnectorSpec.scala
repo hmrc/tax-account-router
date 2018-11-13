@@ -35,8 +35,7 @@ class UserDetailsConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutu
     val userDetailsUri = "user-details-uri"
     val mockHttp = mock[HttpClient]
     val connector = new UserDetailsConnector {
-      override def httpClient: HttpClient = mockHttp
-      override def baseUrl(serviceName: String): String = super.baseUrl(serviceName)
+      override lazy val httpClient: HttpClient = mockHttp
     }
     "execute a call to user-details to retreive a UserDetails" in {
       val userDetailsResponse = new UserDetails(None, "")
