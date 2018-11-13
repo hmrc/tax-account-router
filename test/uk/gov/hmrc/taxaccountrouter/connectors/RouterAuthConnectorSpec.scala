@@ -20,12 +20,13 @@ import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
+
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.taxaccountrouter.auth.{EnrolmentIdentifier, GovernmentGatewayEnrolment, InternalUserIdentifier, UserAuthority}
-import uk.gov.hmrc.taxaccountrouter.config.HttpClient
 
 class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures {
   implicit val hc: HeaderCarrier = HeaderCarrier()

@@ -18,15 +18,17 @@ package uk.gov.hmrc.taxaccountrouter.connectors
 
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.taxaccountrouter.config.{HttpClient, WSHttpClient}
+import uk.gov.hmrc.taxaccountrouter.auth.UserAuthority
 import uk.gov.hmrc.taxaccountrouter.model.UserDetails
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class UserDetailsConnector @Inject()() extends ServicesConfig{
-  lazy val httpClient: HttpClient = WSHttpClient
+class UserDetailsConnector @Inject()(httpClient: HttpClient) extends ServicesConfig{
 
   def getUserDetails(userDetailsUri: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[UserDetails] = httpClient.GET[UserDetails](userDetailsUri)
+
+  def getUserDetails(userAuthority: UserAuthority)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[UserDetails] = httpClient.GET[UserDetails](userAuthority.userDetailsUri.get)
 }

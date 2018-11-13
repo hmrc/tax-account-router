@@ -21,8 +21,10 @@ import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.taxaccountrouter.config.HttpClient
+import uk.gov.hmrc.taxaccountrouter.auth.UserAuthority
 import uk.gov.hmrc.taxaccountrouter.model.UserDetails
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,9 +36,7 @@ class UserDetailsConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutu
   "getUserDetails" should {
     val userDetailsUri = "user-details-uri"
     val mockHttp = mock[HttpClient]
-    val connector = new UserDetailsConnector {
-      override lazy val httpClient: HttpClient = mockHttp
-    }
+    val connector = new UserDetailsConnector(mockHttp)
     "execute a call to user-details to retreive a UserDetails" in {
       val userDetailsResponse = new UserDetails(None, "")
       when(mockHttp.GET(eqTo(userDetailsUri))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(userDetailsResponse))
@@ -47,6 +47,25 @@ class UserDetailsConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutu
     "execute a call to user-details and return an error" in {
       when(mockHttp.GET(eqTo(userDetailsUri))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
       val result = intercept[RuntimeException](await(connector.getUserDetails(userDetailsUri)))
+      result.getMessage shouldBe "error.resource_access_failure"
+    }
+  }
+
+  "getUserDetails for UserAuthority" should {
+    val userDetailsUri = "user-details-uri"
+    val mockHttp = mock[HttpClient]
+    val connector = new UserDetailsConnector(mockHttp)
+    val request = new UserAuthority(None, None, Some(userDetailsUri), None, CredentialStrength.None, None, None)
+    "execute a call to user-details to retreive a UserDetails" in {
+      val userDetailsResponse = new UserDetails(None, "")
+      when(mockHttp.GET(eqTo(userDetailsUri))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(userDetailsResponse))
+      val result = await(connector.getUserDetails(request))
+      result shouldBe userDetailsResponse
+      verify(mockHttp).GET(eqTo(userDetailsUri))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])
+    }
+    "execute a call to user-details and return an error" in {
+      when(mockHttp.GET(eqTo(userDetailsUri))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
+      val result = intercept[RuntimeException](await(connector.getUserDetails(request)))
       result.getMessage shouldBe "error.resource_access_failure"
     }
   }
