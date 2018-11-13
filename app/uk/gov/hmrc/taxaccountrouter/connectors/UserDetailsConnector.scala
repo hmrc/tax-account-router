@@ -16,6 +16,27 @@
 
 package uk.gov.hmrc.taxaccountrouter.connectors
 
-class UserDetailsConnector {
+import javax.inject.{Inject, Singleton}
+import play.api.libs.json.{Format, Json, Writes}
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
+import scala.concurrent.{ExecutionContext, Future}
+
+case class CredentialRole(value: String)
+object CredentialRole {
+  implicit val fmt:Format[CredentialRole] = Json.format[CredentialRole]
+}
+
+case class UserDetail(credentialRole: Option[CredentialRole], affinityGroup: String)
+object UserDetail {
+  implicit val fmt:Format[UserDetail] = Json.format[UserDetail]
+}
+
+@Singleton
+class UserDetailsConnector @Inject()(httpClient: HttpClient) {
+
+  def getUserDetails(userAuthority: UserAuthority)(implicit rds: uk.gov.hmrc.http.HttpReads[UserDetail], hc:HeaderCarrier, ec: ExecutionContext): Future[UserDetail] = {
+    httpClient.GET[UserDetail](userAuthority.userDetailsUri.get)
+  }
 }
