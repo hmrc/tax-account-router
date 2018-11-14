@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.taxaccountrouter.connectors
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.{Inject, Named, Singleton}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{Json, OFormat, Reads, __}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -26,16 +26,14 @@ import uk.gov.hmrc.play.config.ServicesConfig
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RouterAuthConnector @Inject()(httpClient: HttpClient) extends ServicesConfig {
-  def serviceUrl: String = baseUrl("auth")
+class RouterAuthConnector @Inject()(httpClient: HttpClient, @Named("authUrl") serviceUrl: String)(implicit hc: HeaderCarrier, ec: ExecutionContext){
+  def currentUserAuthority(): Future[UserAuthority] = httpClient.GET[UserAuthority](s"$serviceUrl/auth/authority")
 
-  def currentUserAuthority()(implicit hc: HeaderCarrier, ec: ExecutionContext):Future[UserAuthority] = httpClient.GET[UserAuthority](s"$serviceUrl/auth/authority")
+  def userAuthority(credId: String): Future[UserAuthority] = httpClient.GET[UserAuthority](s"$serviceUrl/auth/gg/$credId")
 
-  def userAuthority(credId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext):Future[UserAuthority] = httpClient.GET[UserAuthority](s"$serviceUrl/auth/gg/$credId")
+  def getIds(idsUri: String): Future[InternalUserIdentifier] = httpClient.GET[InternalUserIdentifier](s"$serviceUrl$idsUri")
 
-  def getIds(idsUri: String)(implicit hc: HeaderCarrier, ec: ExecutionContext):Future[InternalUserIdentifier] = httpClient.GET[InternalUserIdentifier](s"$serviceUrl$idsUri")
-
-  def getEnrolments(enrolmentsUri: String)(implicit hc: HeaderCarrier, ec: ExecutionContext):Future[Seq[Any]] = httpClient.GET[Seq[GovernmentGatewayEnrolment]](s"$serviceUrl$enrolmentsUri")
+  def getEnrolments(enrolmentsUri: String): Future[Seq[Any]] = httpClient.GET[Seq[GovernmentGatewayEnrolment]](s"$serviceUrl$enrolmentsUri")
 }
 
 case class GovernmentGatewayEnrolment(key: String, identifiers: Seq[EnrolmentIdentifier], state: String)

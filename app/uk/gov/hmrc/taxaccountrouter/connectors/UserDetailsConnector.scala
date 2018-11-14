@@ -21,22 +21,21 @@ import play.api.libs.json.{Json, Reads}
 import uk.gov.hmrc.auth.core.{CredentialRole, User}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class UserDetailsConnector @Inject()(httpClient: HttpClient) extends ServicesConfig{
+class UserDetailsConnector @Inject()(httpClient: HttpClient)(implicit hc: HeaderCarrier, ec: ExecutionContext){
 
-  def getUserDetails(userDetailsUri: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[UserDetail] = httpClient.GET[UserDetail](userDetailsUri)
+  def getUserDetails(userDetailsUri: String): Future[UserDetail] = httpClient.GET[UserDetail](userDetailsUri)
 
-  def getUserDetails(userAuthority: UserAuthority)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[UserDetail] = httpClient.GET[UserDetail](userAuthority.userDetailsUri.get)
+  def getUserDetails(userAuthority: UserAuthority): Future[UserDetail] = httpClient.GET[UserDetail](userAuthority.userDetailsUri.get)
 }
 
 case class UserDetail(credentialRole: Option[CredentialRole], affinityGroup: String) {
   def isAdmin: Boolean = {
-    credentialRole.get match {
-      case User => true
+    credentialRole match {
+      case Some(User) => true
       case _ => false
     }
   }

@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.taxaccountrouter.controllers
+package uk.gov.hmrc.taxaccountrouter.connectors
 
-import javax.inject.{Inject, Singleton}
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import com.google.inject.AbstractModule
+import com.google.inject.name.Names
+import uk.gov.hmrc.play.config.ServicesConfig
 
-import scala.concurrent.{ExecutionContext, Future}
-
-@Singleton
-class RouterController @Inject()(cc: ControllerComponents)(implicit ec:ExecutionContext) extends BackendController(cc) {
-  def hello(): Action[AnyContent] = Action.async { implicit request =>
-    Future.successful(Ok("Hello world"))
+class ConnectorModule extends AbstractModule with ServicesConfig {
+  override def configure(): Unit = {
+    bind(classOf[String]).annotatedWith(Names.named("authUrl")).toInstance(baseUrl("auth-service"))
+    bind(classOf[String]).annotatedWith(Names.named("saUrl")).toInstance(baseUrl("sa-service"))
   }
 }

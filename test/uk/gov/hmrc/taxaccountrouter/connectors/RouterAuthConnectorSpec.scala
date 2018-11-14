@@ -16,18 +16,34 @@
 
 package uk.gov.hmrc.taxaccountrouter.connectors
 
+import com.google.inject.name.Names
+import com.google.inject.{AbstractModule, Guice}
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import play.api.libs.json.Json
-import uk.gov.hmrc.domain.{Nino, SaUtr}
 
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.domain.{Nino, SaUtr}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.test.UnitSpec
+
+class MockHttpModule extends AbstractModule {
+  var client: HttpClient = mock(classOf[HttpClient])
+
+  override def configure(): Unit = {
+    bind(classOf[HttpClient]).toInstance(client)
+    bind(classOf[ExecutionContext]).toInstance(ExecutionContext.Implicits.global)
+    bind(classOf[HeaderCarrier]).toInstance(HeaderCarrier())
+  }
+}
+
+class MockAuthConnectorModule extends AbstractModule {
+  override def configure(): Unit = bind(classOf[String]).annotatedWith(Names.named("authUrl")).toInstance("auth-service-url")
+}
 
 class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures {
   implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -35,10 +51,10 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
 
   "currentUserAuthority" should {
     val authUrl = "auth-service-url"
-    val mockHttp = mock[HttpClient]
-    val connector = new RouterAuthConnector(mockHttp) {
-      override def serviceUrl: String = authUrl
-    }
+    val httpMock = new MockHttpModule()
+    val injcetor = Guice.createInjector(httpMock, new MockAuthConnectorModule)
+    val mockHttp = httpMock.client
+    val connector = injcetor.getInstance(classOf[RouterAuthConnector])
     "execute call to auth microservice to get the authority" in {
       val authResponse = UserAuthority(None, Some(""), Some(""), None, "Weak", None, None)
       when(mockHttp.GET(eqTo(s"$authUrl/auth/authority"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(authResponse))
@@ -54,12 +70,12 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
   }
 
   "userAuthority" should {
-    val mockHttp:HttpClient = mock[HttpClient]
-    val authUrl = "auth-service-url"
     val credId = "credId"
-    val connector = new RouterAuthConnector(mockHttp) {
-      override def serviceUrl: String = authUrl
-    }
+    val authUrl = "auth-service-url"
+    val httpMock = new MockHttpModule()
+    val injcetor = Guice.createInjector(httpMock, new MockAuthConnectorModule)
+    val mockHttp = httpMock.client
+    val connector = injcetor.getInstance(classOf[RouterAuthConnector])
     "execute call to auth microservice to get the authority" in {
       val authResponse = UserAuthority(None, Some(""), Some(""), None, "Weak", None, None)
       when(mockHttp.GET(eqTo(s"$authUrl/auth/gg/$credId"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(authResponse))
@@ -75,12 +91,12 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
   }
 
   "getIds" should {
-    val mockHttp:HttpClient = mock[HttpClient]
-    val authUrl = "auth-service-url"
     val ids = "1"
-    val connector = new RouterAuthConnector(mockHttp) {
-      override def serviceUrl: String = authUrl
-    }
+    val authUrl = "auth-service-url"
+    val httpMock = new MockHttpModule()
+    val injcetor = Guice.createInjector(httpMock, new MockAuthConnectorModule)
+    val mockHttp = httpMock.client
+    val connector = injcetor.getInstance(classOf[RouterAuthConnector])
     "execute call to auth microservice to get the InternalUserIdentifier" in {
       val authResponse = InternalUserIdentifier("")
       when(mockHttp.GET(eqTo(s"$authUrl$ids"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(authResponse))
@@ -96,12 +112,12 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
   }
 
   "getEnrolments" should {
-    val mockHttp:HttpClient = mock[HttpClient]
-    val authUrl = "auth-service-url"
     val enrolment = "1"
-    val connector = new RouterAuthConnector(mockHttp) {
-      override def serviceUrl: String = authUrl
-    }
+    val authUrl = "auth-service-url"
+    val httpMock = new MockHttpModule()
+    val injcetor = Guice.createInjector(httpMock, new MockAuthConnectorModule)
+    val mockHttp = httpMock.client
+    val connector = injcetor.getInstance(classOf[RouterAuthConnector])
     "execute call to auth microservice to get the GovernmentGatewayEnrolment" in {
       val authResponse = Seq(GovernmentGatewayEnrolment("1", Seq(EnrolmentIdentifier("1", "test")), ""))
       when(mockHttp.GET(eqTo(s"$authUrl$enrolment"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(authResponse))

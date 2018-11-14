@@ -81,15 +81,15 @@ class UserDetailsConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutu
   }
 
   "isAdmin" should {
-    val expectedAffinityGroup = "affinityGroup"
     val scenarios = Table(
       ("role", "result"),
       (UserDetail(Some(User), "Organisation"), true),
-      (UserDetail(Some(Assistant), "Organisation"), false)
+      (UserDetail(Some(Assistant), "Organisation"), false),
+      (UserDetail(None, "Organisation"), false)
     )
     forAll(scenarios) {
       (role: UserDetail, expectedResult: Boolean) =>
-        s"return $expectedResult if user has credential role " + role.credentialRole.get in {
+        s"return $expectedResult if user has credential role " + role.credentialRole.getOrElse("None") in {
           role.isAdmin shouldBe expectedResult
         }
     }
