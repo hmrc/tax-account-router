@@ -20,12 +20,13 @@ import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
+import org.scalatest.prop.TableDrivenPropertyChecks._
+import org.scalatest.prop.Tables.Table
+import play.api.libs.json.Json
+import uk.gov.hmrc.auth.core.{Assistant, User}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.taxaccountrouter.auth.UserAuthority
-import uk.gov.hmrc.taxaccountrouter.model.UserDetails
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -38,7 +39,7 @@ class UserDetailsConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutu
     val mockHttp = mock[HttpClient]
     val connector = new UserDetailsConnector(mockHttp)
     "execute a call to user-details to retreive a UserDetails" in {
-      val userDetailsResponse = new UserDetails(None, "")
+      val userDetailsResponse = new UserDetail(None, "")
       when(mockHttp.GET(eqTo(userDetailsUri))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(userDetailsResponse))
       val result = await(connector.getUserDetails(userDetailsUri))
       result shouldBe userDetailsResponse
@@ -55,9 +56,9 @@ class UserDetailsConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutu
     val userDetailsUri = "user-details-uri"
     val mockHttp = mock[HttpClient]
     val connector = new UserDetailsConnector(mockHttp)
-    val request = new UserAuthority(None, None, Some(userDetailsUri), None, CredentialStrength.None, None, None)
+    val request = new UserAuthority(None, None, Some(userDetailsUri), None, "Weak", None, None)
     "execute a call to user-details to retreive a UserDetails" in {
-      val userDetailsResponse = new UserDetails(None, "")
+      val userDetailsResponse = new UserDetail(None, "")
       when(mockHttp.GET(eqTo(userDetailsUri))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(userDetailsResponse))
       val result = await(connector.getUserDetails(request))
       result shouldBe userDetailsResponse
@@ -67,6 +68,30 @@ class UserDetailsConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutu
       when(mockHttp.GET(eqTo(userDetailsUri))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
       val result = intercept[RuntimeException](await(connector.getUserDetails(request)))
       result.getMessage shouldBe "error.resource_access_failure"
+    }
+  }
+
+  "reads of UserDetails" should {
+    "read credentialRole if available" in {
+      Json.parse("""{"credentialRole":"User","affinityGroup":"Organisation"}""").as[UserDetail] shouldBe UserDetail(Some(User), "Organisation")
+    }
+    "read credentialRole as None if not available" in {
+      Json.parse("""{"affinityGroup":"Baz"}""").as[UserDetail] shouldBe UserDetail(None, "Baz")
+    }
+  }
+
+  "isAdmin" should {
+    val expectedAffinityGroup = "affinityGroup"
+    val scenarios = Table(
+      ("role", "result"),
+      (UserDetail(Some(User), "Organisation"), true),
+      (UserDetail(Some(Assistant), "Organisation"), false)
+    )
+    forAll(scenarios) {
+      (role: UserDetail, expectedResult: Boolean) =>
+        s"return $expectedResult if user has credential role " + role.credentialRole.get in {
+          role.isAdmin shouldBe expectedResult
+        }
     }
   }
 }

@@ -16,28 +16,54 @@
 
 package uk.gov.hmrc.taxaccountrouter.connectors
 
-import uk.gov.hmrc.http.{HeaderCarrier, HttpGet}
+import javax.inject.{Inject, Singleton}
+import play.api.libs.functional.syntax._
+import play.api.libs.json.{Json, OFormat, Reads, __}
+import uk.gov.hmrc.domain.{Nino, SaUtr}
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.taxaccountrouter.auth.{GovernmentGatewayEnrolment, InternalUserIdentifier, UserAuthority}
-import uk.gov.hmrc.taxaccountrouter.config.WSHttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait RouterAuthConnector extends ServicesConfig {
-  def http: HttpGet
-  def serviceUrl: String
+@Singleton
+class RouterAuthConnector @Inject()(httpClient: HttpClient) extends ServicesConfig {
+  def serviceUrl: String = baseUrl("auth")
 
-  def currentUserAuthority(implicit hc: HeaderCarrier, ec: ExecutionContext):Future[UserAuthority] = http.GET[UserAuthority](s"$serviceUrl/auth/authority")
+  def currentUserAuthority()(implicit hc: HeaderCarrier, ec: ExecutionContext):Future[UserAuthority] = httpClient.GET[UserAuthority](s"$serviceUrl/auth/authority")
 
-  def userAuthority(credId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext):Future[UserAuthority] = http.GET[UserAuthority](s"$serviceUrl/auth/gg/$credId")
+  def userAuthority(credId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext):Future[UserAuthority] = httpClient.GET[UserAuthority](s"$serviceUrl/auth/gg/$credId")
 
-  def getIds(idsUri: String)(implicit hc: HeaderCarrier, ec: ExecutionContext):Future[InternalUserIdentifier] = http.GET[InternalUserIdentifier](s"$serviceUrl$idsUri")
+  def getIds(idsUri: String)(implicit hc: HeaderCarrier, ec: ExecutionContext):Future[InternalUserIdentifier] = httpClient.GET[InternalUserIdentifier](s"$serviceUrl$idsUri")
 
-  def getEnrolments(enrolmentsUri: String)(implicit hc: HeaderCarrier, ec: ExecutionContext):Future[Seq[Any]] = http.GET[Seq[GovernmentGatewayEnrolment]](s"$serviceUrl$enrolmentsUri")
+  def getEnrolments(enrolmentsUri: String)(implicit hc: HeaderCarrier, ec: ExecutionContext):Future[Seq[Any]] = httpClient.GET[Seq[GovernmentGatewayEnrolment]](s"$serviceUrl$enrolmentsUri")
 }
 
-object RouterAuthConnector extends RouterAuthConnector {
-  override def http: HttpGet = WSHttpClient
-  override def serviceUrl: String = baseUrl("auth")
+case class GovernmentGatewayEnrolment(key: String, identifiers: Seq[EnrolmentIdentifier], state: String)
 
+object GovernmentGatewayEnrolment {
+  implicit val idFmt: OFormat[EnrolmentIdentifier] = Json.format[EnrolmentIdentifier]
+  implicit val fmt: OFormat[GovernmentGatewayEnrolment] = Json.format[GovernmentGatewayEnrolment]
+}
+
+case class EnrolmentIdentifier(key: String, value: String)
+
+case class InternalUserIdentifier(internalId: String) extends AnyVal
+
+object InternalUserIdentifier {
+  implicit val reads: Reads[InternalUserIdentifier] = (__ \ "internalId").read[String].map(InternalUserIdentifier(_))
+  implicit def convertToString(id: InternalUserIdentifier): String = id.internalId
+}
+
+case class UserAuthority(twoFactorAuthOptId: Option[String], idsUri: Option[String], userDetailsUri: Option[String], enrolmentsUri: Option[String], credentialStrength: String, nino: Option[Nino], saUtr: Option[SaUtr])
+
+object UserAuthority {
+  implicit val reads: Reads[UserAuthority] =
+    ((__ \ "twoFactorAuthOtpId").readNullable[String] and
+      (__ \ "ids").readNullable[String] and
+      (__ \ "userDetailsLink").readNullable[String] and
+      (__ \ "enrolments").readNullable[String] and
+      (__ \ "credentialStrength").read[String] and
+      (__ \ "nino").readNullable[Nino] and
+      (__ \ "saUtr").readNullable[SaUtr]).apply(UserAuthority.apply _)
 }

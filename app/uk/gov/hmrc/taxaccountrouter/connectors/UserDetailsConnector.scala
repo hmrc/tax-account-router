@@ -17,18 +17,31 @@
 package uk.gov.hmrc.taxaccountrouter.connectors
 
 import javax.inject.{Inject, Singleton}
+import play.api.libs.json.{Json, Reads}
+import uk.gov.hmrc.auth.core.{CredentialRole, User}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.taxaccountrouter.auth.UserAuthority
-import uk.gov.hmrc.taxaccountrouter.model.UserDetails
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class UserDetailsConnector @Inject()(httpClient: HttpClient) extends ServicesConfig{
 
-  def getUserDetails(userDetailsUri: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[UserDetails] = httpClient.GET[UserDetails](userDetailsUri)
+  def getUserDetails(userDetailsUri: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[UserDetail] = httpClient.GET[UserDetail](userDetailsUri)
 
-  def getUserDetails(userAuthority: UserAuthority)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[UserDetails] = httpClient.GET[UserDetails](userAuthority.userDetailsUri.get)
+  def getUserDetails(userAuthority: UserAuthority)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[UserDetail] = httpClient.GET[UserDetail](userAuthority.userDetailsUri.get)
+}
+
+case class UserDetail(credentialRole: Option[CredentialRole], affinityGroup: String) {
+  def isAdmin: Boolean = {
+    credentialRole.get match {
+      case User => true
+      case _ => false
+    }
+  }
+}
+
+object UserDetail {
+  implicit val reads: Reads[UserDetail] = Json.reads[UserDetail]
 }
