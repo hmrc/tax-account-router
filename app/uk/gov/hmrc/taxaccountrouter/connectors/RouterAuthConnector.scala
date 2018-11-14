@@ -19,7 +19,6 @@ package uk.gov.hmrc.taxaccountrouter.connectors
 import javax.inject.{Inject, Singleton}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{Json, OFormat, Reads, __}
-import uk.gov.hmrc.domain.{Nino, SaUtr}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
@@ -55,7 +54,7 @@ object InternalUserIdentifier {
   implicit def convertToString(id: InternalUserIdentifier): String = id.internalId
 }
 
-case class UserAuthority(twoFactorAuthOptId: Option[String], idsUri: Option[String], userDetailsUri: Option[String], enrolmentsUri: Option[String], credentialStrength: String, nino: Option[Nino], saUtr: Option[SaUtr])
+case class UserAuthority(twoFactorAuthOptId: Option[String], idsUri: Option[String], userDetailsUri: Option[String], enrolmentsUri: Option[String], credentialStrength: String, nino: Option[String], saUtr: Option[String])
 
 object UserAuthority {
   implicit val reads: Reads[UserAuthority] =
@@ -64,6 +63,6 @@ object UserAuthority {
       (__ \ "userDetailsLink").readNullable[String] and
       (__ \ "enrolments").readNullable[String] and
       (__ \ "credentialStrength").read[String] and
-      (__ \ "nino").readNullable[Nino] and
-      (__ \ "saUtr").readNullable[SaUtr]).apply(UserAuthority.apply _)
+      (__ \ "nino").readNullable[String] and
+      (__ \ "saUtr").readNullable[String]).apply(UserAuthority.apply _)
 }

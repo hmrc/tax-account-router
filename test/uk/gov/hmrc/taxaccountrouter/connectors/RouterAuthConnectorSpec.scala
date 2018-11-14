@@ -147,7 +147,7 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
            |    "ids": "$idsUri",
            |    "enrolments": "$enrolmentsUri"
            |    }""".stripMargin
-      Json.parse(authResponse).as[UserAuthority] shouldBe UserAuthority(Some(twoFactorOtpId), Some(idsUri), Some(userDetailsLink), Some(enrolmentsUri), "Strong", Some(nino), Some(saUtr))
+      Json.parse(authResponse).as[UserAuthority] shouldBe UserAuthority(Some(twoFactorOtpId), Some(idsUri), Some(userDetailsLink), Some(enrolmentsUri), "Strong", Some("CS100700A"), Some("12345"))
     }
   }
 }
