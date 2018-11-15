@@ -16,17 +16,19 @@
 
 package uk.gov.hmrc.taxaccountrouter.connectors
 
-import javax.inject.{Inject, Named, Singleton}
+import javax.inject.{Inject, Singleton}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{Json, OFormat, Reads, __}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
+import uk.gov.hmrc.play.config.inject.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RouterAuthConnector @Inject()(httpClient: HttpClient, @Named("authUrl") serviceUrl: String)(implicit hc: HeaderCarrier, ec: ExecutionContext){
+class RouterAuthConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesConfig)(implicit hc: HeaderCarrier, ec: ExecutionContext){
+  lazy val serviceUrl:String = servicesConfig.baseUrl("auth")
+
   def currentUserAuthority(): Future[UserAuthority] = httpClient.GET[UserAuthority](s"$serviceUrl/auth/authority")
 
   def userAuthority(credId: String): Future[UserAuthority] = httpClient.GET[UserAuthority](s"$serviceUrl/auth/gg/$credId")
