@@ -16,6 +16,36 @@
 
 package uk.gov.hmrc.taxaccountrouter.connectors
 
-class SelfAssessmentConnector {
+import javax.inject.{Inject, Singleton}
+import org.slf4j.Logger
+import play.api.libs.json._
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.play.config.inject.ServicesConfig
 
+import scala.concurrent.{ExecutionContext, Future}
+
+@Singleton
+class SelfAssessmentConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesConfig, log: Logger)(implicit hc: HeaderCarrier, ec: ExecutionContext) {
+  def serviceUrl:String = servicesConfig.baseUrl("sa")
+
+  def lastReturn(utr: String): Future[SaReturn] = {
+    httpClient.GET[SaReturn](s"$serviceUrl/sa/individual/$utr/return/last").recover{
+      case _: NotFoundException => new SaReturn()
+      case e: Throwable =>
+        log.warn(s"Unable to retrieve last SA return for user with utr $utr", e)
+        throw e
+    }
+  }
+
+  def lastReturn(userAuthority: UserAuthority): Future[SaReturn] = {
+    if (userAuthority.saUtr.isEmpty) Future.successful(SaReturn())
+    else lastReturn(userAuthority.saUtr.get)
+  }
+}
+
+case class SaReturn(supplementarySchedules: List[String] = List.empty, previousReturn: Boolean = false)
+
+object SaReturn {
+  implicit val reads: Reads[SaReturn] = (__ \ "supplementarySchedules").readNullable[List[String]].map(f => SaReturn(f.getOrElse(List.empty), f.nonEmpty))
 }

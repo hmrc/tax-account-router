@@ -137,13 +137,17 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
         s"""{
            |    "userDetailsLink": "$userDetailsLink",
            |    "twoFactorAuthOtpId": "$twoFactorOtpId",
-           |    "credentialStrength": "${credentialStrength}",
+           |    "credentialStrength": "$credentialStrength",
            |    "nino": "${nino.value}",
            |    "saUtr": "${saUtr.value}",
            |    "ids": "$idsUri",
            |    "enrolments": "$enrolmentsUri"
            |    }""".stripMargin
       Json.parse(authResponse).as[UserAuthority] shouldBe UserAuthority(Some(twoFactorOtpId), Some(idsUri), Some(userDetailsLink), Some(enrolmentsUri), "Strong", Some("CS100700A"), Some("12345"))
+    }
+    "Parse values not provided to None correctly" in {
+      val authResponse = s"""{"credentialStrength": "${CredentialStrength.Strong}"}"""
+      Json.parse(authResponse).as[UserAuthority] shouldBe UserAuthority(None, None, None, None, "Strong", None, None)
     }
   }
 }

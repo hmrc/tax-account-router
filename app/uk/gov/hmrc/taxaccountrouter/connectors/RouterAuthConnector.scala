@@ -18,7 +18,7 @@ package uk.gov.hmrc.taxaccountrouter.connectors
 
 import javax.inject.{Inject, Singleton}
 import play.api.libs.functional.syntax._
-import play.api.libs.json.{Json, OFormat, Reads, __}
+import play.api.libs.json.{Format, Json, Reads, __}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.inject.ServicesConfig
@@ -41,8 +41,8 @@ class RouterAuthConnector @Inject()(httpClient: HttpClient, servicesConfig: Serv
 case class GovernmentGatewayEnrolment(key: String, identifiers: Seq[EnrolmentIdentifier], state: String)
 
 object GovernmentGatewayEnrolment {
-  implicit val idFmt: OFormat[EnrolmentIdentifier] = Json.format[EnrolmentIdentifier]
-  implicit val fmt: OFormat[GovernmentGatewayEnrolment] = Json.format[GovernmentGatewayEnrolment]
+  implicit val idFmt: Format[EnrolmentIdentifier] = Json.format[EnrolmentIdentifier]
+  implicit val fmt: Format[GovernmentGatewayEnrolment] = Json.format[GovernmentGatewayEnrolment]
 }
 
 case class EnrolmentIdentifier(key: String, value: String)
