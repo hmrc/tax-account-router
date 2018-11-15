@@ -17,25 +17,47 @@
 package uk.gov.hmrc.taxaccountrouter.connectors
 
 import javax.inject.{Inject, Singleton}
+import org.slf4j.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{Format, Json, Reads, __}
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.inject.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RouterAuthConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesConfig)(implicit hc: HeaderCarrier, ec: ExecutionContext){
+class RouterAuthConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesConfig, log: Logger)(implicit hc: HeaderCarrier, ec: ExecutionContext){
   lazy val serviceUrl:String = servicesConfig.baseUrl("auth")
 
-  def currentUserAuthority(): Future[UserAuthority] = httpClient.GET[UserAuthority](s"$serviceUrl/auth/authority")
+  def currentUserAuthority(): Future[UserAuthority] = httpClient.GET[UserAuthority](s"$serviceUrl/auth/authority").recover {
+    case e: Throwable => {
+      log.warn("Unable to retrieve current user", e)
+      throw e
+    }
+  }
 
-  def userAuthority(credId: String): Future[UserAuthority] = httpClient.GET[UserAuthority](s"$serviceUrl/auth/gg/$credId")
+  def userAuthority(credId: String): Future[UserAuthority] = httpClient.GET[UserAuthority](s"$serviceUrl/auth/gg/$credId").recover {
+    case _: NotFoundException => new UserAuthority(None, None, None, None, "None", None, None)
+    case e: Throwable => {
+      log.warn(s"No user found with credId $credId", e)
+      throw e
+    }
+  }
 
-  def getIds(idsUri: String): Future[InternalUserIdentifier] = httpClient.GET[InternalUserIdentifier](s"$serviceUrl$idsUri")
+  def getIds(idsUri: String): Future[InternalUserIdentifier] = httpClient.GET[InternalUserIdentifier](s"$serviceUrl$idsUri").recover {
+    case e: Throwable => {
+      log.warn(s"Unable to retrieve internal Identifier with idUri $idsUri", e)
+      throw e
+    }
+  }
 
-  def getEnrolments(enrolmentsUri: String): Future[Seq[Any]] = httpClient.GET[Seq[GovernmentGatewayEnrolment]](s"$serviceUrl$enrolmentsUri")
+  def getEnrolments(enrolmentsUri: String): Future[Seq[Any]] = httpClient.GET[Seq[GovernmentGatewayEnrolment]](s"$serviceUrl$enrolmentsUri").recover {
+    case e: Throwable => {
+      log.warn(s"Unable to retrieve gg enrolment with enrolment Uri $enrolmentsUri", e)
+      throw e
+    }
+  }
 }
 
 case class GovernmentGatewayEnrolment(key: String, identifiers: Seq[EnrolmentIdentifier], state: String)

@@ -17,19 +17,30 @@
 package uk.gov.hmrc.taxaccountrouter.connectors
 
 import javax.inject.{Inject, Singleton}
+import org.slf4j.Logger
 import play.api.libs.json.{Json, Reads}
 import uk.gov.hmrc.auth.core.{CredentialRole, User}
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class UserDetailsConnector @Inject()(httpClient: HttpClient)(implicit hc: HeaderCarrier, ec: ExecutionContext){
+class UserDetailsConnector @Inject()(httpClient: HttpClient, log: Logger)(implicit hc: HeaderCarrier, ec: ExecutionContext){
 
-  def getUserDetails(userDetailsUri: String): Future[UserDetail] = httpClient.GET[UserDetail](userDetailsUri)
+  def getUserDetails(userDetailsUri: String): Future[UserDetail] = httpClient.GET[UserDetail](userDetailsUri).recover{
+    case e: Throwable =>
+      log.warn(s"Unable to retrieve user details with uri $userDetailsUri", e)
+      throw e
+  }
 
-  def getUserDetails(userAuthority: UserAuthority): Future[UserDetail] = httpClient.GET[UserDetail](userAuthority.userDetailsUri.get)
+  def getUserDetails(userAuthority: UserAuthority): Future[UserDetail] = {
+    getUserDetails(userAuthority.userDetailsUri.getOrElse{
+      val e = new NotFoundException("no userDetailsUri found in UserAuthority")
+      log.warn("user Authority did not contain a userDetailsUri", e)
+      throw e
+    })
+  }
 }
 
 case class UserDetail(credentialRole: Option[CredentialRole], affinityGroup: String) {
