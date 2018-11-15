@@ -34,7 +34,7 @@ import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.test.UnitSpec
 
 class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures {
-  val fakeLogger = Mockito.spy(classOf[Logger])
+  val fakeLogger: Logger = Mockito.spy(classOf[Logger])
   implicit val hc: HeaderCarrier = HeaderCarrier()
   implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
   val authUrl = "auth-service-url"

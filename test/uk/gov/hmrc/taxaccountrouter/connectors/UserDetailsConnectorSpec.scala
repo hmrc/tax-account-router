@@ -33,7 +33,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserDetailsConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures {
-  val fakeLogger = Mockito.spy(classOf[Logger])
+  val fakeLogger: Logger = Mockito.spy(classOf[Logger])
   implicit val hc: HeaderCarrier = HeaderCarrier()
   implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
