@@ -39,8 +39,7 @@ class SelfAssessmentConnector @Inject()(httpClient: HttpClient, servicesConfig: 
   }
 
   def lastReturn(userAuthority: UserAuthority): Future[SaReturn] = {
-    if (userAuthority.saUtr.isEmpty) Future.successful(SaReturn())
-    else lastReturn(userAuthority.saUtr.get)
+    userAuthority.saUtr.fold(Future.successful(SaReturn()))(saUtr => lastReturn(saUtr))
   }
 }
 

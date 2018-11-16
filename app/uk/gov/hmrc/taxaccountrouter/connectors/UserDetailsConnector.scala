@@ -44,12 +44,7 @@ class UserDetailsConnector @Inject()(httpClient: HttpClient, log: Logger)(implic
 }
 
 case class UserDetail(credentialRole: Option[CredentialRole], affinityGroup: String) {
-  def isAdmin: Boolean = {
-    credentialRole match {
-      case Some(User) => true
-      case _ => false
-    }
-  }
+  def isAdmin: Boolean = credentialRole.contains(User)
 }
 
 object UserDetail {
