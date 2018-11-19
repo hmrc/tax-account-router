@@ -40,7 +40,7 @@ class RouterAuthConnector @Inject()(httpClient: HttpClient, servicesConfig: Serv
   }
 
   def userAuthority(credId: String)(implicit hc: HeaderCarrier): Future[Option[UserAuthority]] = {
-    httpClient.GET[UserAuthority](s"$serviceUrl/auth/gg/$credId").recover {
+    httpClient.GET[Option[UserAuthority]](s"$serviceUrl/auth/gg/$credId").recover {
       case _: NotFoundException => None
       case e: Throwable => {
         log.warn(s"No user found with credId $credId", e)

@@ -30,7 +30,7 @@ class SelfAssessmentConnector @Inject()(httpClient: HttpClient, servicesConfig: 
   def serviceUrl:String = servicesConfig.baseUrl("sa")
 
   def lastReturn(utr: String): Future[Option[SaReturn]] = {
-    httpClient.GET[SaReturn](s"$serviceUrl/sa/individual/$utr/return/last").recover{
+    httpClient.GET[Option[SaReturn]](s"$serviceUrl/sa/individual/$utr/return/last").recover{
       case _: NotFoundException => None
       case e: Throwable =>
         log.warn(s"Unable to retrieve last SA return for user with utr $utr", e)
@@ -39,12 +39,13 @@ class SelfAssessmentConnector @Inject()(httpClient: HttpClient, servicesConfig: 
   }
 
   def lastReturn(userAuthority: UserAuthority): Future[Option[SaReturn]] = {
-    userAuthority.saUtr.fold(Future.successful(Option(SaReturn())))(saUtr => lastReturn(saUtr))
+    userAuthority.saUtr.fold(Future.successful(Option(SaReturn.noSaReturn)))(saUtr => lastReturn(saUtr))
   }
 }
 
-case class SaReturn(supplementarySchedules: List[String] = List.empty, previousReturn: Boolean = false)
+case class SaReturn(supplementarySchedules: List[String], previousReturn: Boolean = false)
 
 object SaReturn {
+  lazy val noSaReturn = SaReturn(List.empty)
   implicit val reads: Reads[SaReturn] = (__ \ "supplementarySchedules").readNullable[List[String]].map(f => SaReturn(f.getOrElse(List.empty), f.nonEmpty))
 }

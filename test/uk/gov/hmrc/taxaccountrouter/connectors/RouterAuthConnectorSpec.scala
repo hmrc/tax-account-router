@@ -67,7 +67,7 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
     val mockHttp = mock[HttpClient]
     val connector = new RouterAuthConnector(mockHttp, new TestServicesConfig, fakeLogger)
     "execute call to auth microservice to get the authority" in {
-      val authResponse = UserAuthority(None, Some(""), Some(""), None, "Weak", None, None)
+      val authResponse = Some(UserAuthority(None, Some(""), Some(""), None, "Weak", None, None))
       when(mockHttp.GET(eqTo(s"$authUrl/auth/gg/$credId"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(authResponse))
       val result = await(connector.userAuthority(credId))
       result shouldBe authResponse
@@ -82,7 +82,7 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
     "execute call to auth microservice passes up NotFoundException" in {
       when(mockHttp.GET(eqTo(s"$authUrl/auth/gg/$credId"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new NotFoundException("")))
       val result = await(connector.userAuthority(credId))
-      result shouldBe UserAuthority(None, None, None, None, "None", None, None)
+      result shouldBe None
     }
   }
 

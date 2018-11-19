@@ -47,10 +47,10 @@ class SelfAssessmentConnectorSpec extends UnitSpec with MockitoSugar with ScalaF
     val utr = "1"
     val connector = new SelfAssessmentConnector(mockHttp, new TestServicesConfig, fakeLogger)
     "execute a call to sa returning an SaReturn" in {
-      val saResponse = SaReturn(List("partnership"))
+      val saResponse = Some(SaReturn(List("partnership")))
       when(mockHttp.GET(eqTo(s"$saUrl/sa/individual/$utr/return/last"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(saResponse))
       val result = await(connector.lastReturn(utr))
-      result shouldBe saResponse
+      result shouldBe Some(SaReturn(List("partnership")))
       verify(mockHttp).GET(eqTo(s"$saUrl/sa/individual/$utr/return/last"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])
     }
     "execute a call to user-details that returns and logs an error" in {
@@ -62,7 +62,7 @@ class SelfAssessmentConnectorSpec extends UnitSpec with MockitoSugar with ScalaF
     "when no SA is found an empty SaReturn is returned" in {
       when(mockHttp.GET(eqTo(s"$saUrl/sa/individual/$utr/return/last"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new NotFoundException("")))
       val result = await(connector.lastReturn(utr))
-      result shouldBe SaReturn()
+      result shouldBe None
     }
   }
 
@@ -72,7 +72,7 @@ class SelfAssessmentConnectorSpec extends UnitSpec with MockitoSugar with ScalaF
     val connector = new SelfAssessmentConnector(mockHttp, new TestServicesConfig, fakeLogger)
     "execute a call to sa returning an SaReturn" in {
       val userAuthority = new UserAuthority(None, None, None, None, "Weak", None, Some(utr))
-      val saResponse = SaReturn(List("partnership"))
+      val saResponse = Some(SaReturn(List("partnership")))
       when(mockHttp.GET(eqTo(s"$saUrl/sa/individual/$utr/return/last"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(saResponse))
       val result = await(connector.lastReturn(userAuthority))
       result shouldBe saResponse
@@ -89,13 +89,13 @@ class SelfAssessmentConnectorSpec extends UnitSpec with MockitoSugar with ScalaF
       val userAuthority = new UserAuthority(None, None, None, None, "Weak", None, None)
       when(mockHttp.GET(eqTo(s"$saUrl/sa/individual/$utr/return/last"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
       val result = await(connector.lastReturn(userAuthority))
-      result shouldBe SaReturn()
+      result shouldBe Some(SaReturn(List.empty, false))
     }
     "when no SA is found an empty SaReturn is returned" in {
       val userAuthority = new UserAuthority(None, None, None, None, "Weak", None, None)
       when(mockHttp.GET(eqTo(s"$saUrl/sa/individual/$utr/return/last"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new NotFoundException("")))
       val result = await(connector.lastReturn(userAuthority))
-      result shouldBe SaReturn()
+      result shouldBe Some(SaReturn(List.empty, false))
     }
   }
 
