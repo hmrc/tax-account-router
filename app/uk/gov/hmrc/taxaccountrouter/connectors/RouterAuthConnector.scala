@@ -77,12 +77,10 @@ object GovernmentGatewayEnrolment {
 
 case class EnrolmentIdentifier(key: String, value: String)
 
-case class InternalUserIdentifier(internalId: String) extends AnyVal
+case class InternalUserIdentifier(internalId: String)
 
 object InternalUserIdentifier {
   implicit val reads: Reads[InternalUserIdentifier] = (__ \ "internalId").read[String].map(InternalUserIdentifier(_))
-
-  implicit def convertToString(id: InternalUserIdentifier): String = id.internalId
 }
 
 case class UserAuthority(twoFactorAuthOptId: Option[String], idsUri: Option[String], userDetailsUri: Option[String], enrolmentsUri: Option[String], credentialStrength: String, nino: Option[String], saUtr: Option[String])
