@@ -29,17 +29,17 @@ import scala.concurrent.{ExecutionContext, Future}
 class SelfAssessmentConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesConfig, log: Logger)(implicit hc: HeaderCarrier, ec: ExecutionContext) {
   def serviceUrl:String = servicesConfig.baseUrl("sa")
 
-  def lastReturn(utr: String): Future[SaReturn] = {
+  def lastReturn(utr: String): Future[Option[SaReturn]] = {
     httpClient.GET[SaReturn](s"$serviceUrl/sa/individual/$utr/return/last").recover{
-      case _: NotFoundException => new SaReturn()
+      case _: NotFoundException => None
       case e: Throwable =>
         log.warn(s"Unable to retrieve last SA return for user with utr $utr", e)
         throw e
     }
   }
 
-  def lastReturn(userAuthority: UserAuthority): Future[SaReturn] = {
-    userAuthority.saUtr.fold(Future.successful(SaReturn()))(saUtr => lastReturn(saUtr))
+  def lastReturn(userAuthority: UserAuthority): Future[Option[SaReturn]] = {
+    userAuthority.saUtr.fold(Future.successful(Option(SaReturn())))(saUtr => lastReturn(saUtr))
   }
 }
 
