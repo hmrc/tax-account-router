@@ -40,7 +40,7 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
 
   "currentUserAuthority" should {
     val mockHttp = mock[HttpClient]
-    val connector = new RouterAuthConnector(mockHttp, testConfig, fakeLogger)
+    val connector = new RouterAuthConnector(mockHttp, fakeLogger, testConfig)
     "execute call to auth microservice to get the authority" in {
       val authResponse = UserAuthority(None, Some(""), Some(""), None, "Weak", None, None)
       when(mockHttp.GET(eqTo(s"$authUrl/auth/authority"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(authResponse))
@@ -52,16 +52,16 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
       when(mockHttp.GET(eqTo(s"$authUrl/auth/authority"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
       val result = intercept[RuntimeException](await(connector.currentUserAuthority()))
       result.getMessage shouldBe "error.resource_access_failure"
-      verify(fakeLogger).warn("Unable to retrieve current user", result)
+      verify(fakeLogger).warn("Was unable to execute call to auth", result)
     }
   }
 
   "userAuthority" should {
     val credId = "credId"
     val mockHttp = mock[HttpClient]
-    val connector = new RouterAuthConnector(mockHttp, testConfig, fakeLogger)
+    val connector = new RouterAuthConnector(mockHttp, fakeLogger, testConfig)
     "execute call to auth microservice to get the authority" in {
-      val authResponse = Some(UserAuthority(None, Some(""), Some(""), None, "Weak", None, None))
+      val authResponse = UserAuthority(None, Some(""), Some(""), None, "Weak", None, None)
       when(mockHttp.GET(eqTo(s"$authUrl/auth/gg/$credId"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(authResponse))
       val result = await(connector.userAuthority(credId))
       result shouldBe authResponse
@@ -71,19 +71,19 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
       when(mockHttp.GET(eqTo(s"$authUrl/auth/gg/$credId"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
       val result = intercept[RuntimeException](await(connector.userAuthority(credId)))
       result.getMessage shouldBe "error.resource_access_failure"
-      verify(fakeLogger).warn(s"No user found with credId $credId", result)
+      verify(fakeLogger).warn(s"Was unable to execute call to auth for credId $credId", result)
     }
     "execute call to auth microservice passes up NotFoundException" in {
-      when(mockHttp.GET(eqTo(s"$authUrl/auth/gg/$credId"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new NotFoundException("")))
-      val result = await(connector.userAuthority(credId))
-      result shouldBe None
+      when(mockHttp.GET(eqTo(s"$authUrl/auth/gg/$credId"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new NotFoundException("error.resource_access_failure")))
+      val result = intercept[NotFoundException](await(connector.userAuthority(credId)))
+      result.getMessage shouldBe "error.resource_access_failure"
     }
   }
 
   "getIds" should {
     val ids = "1"
     val mockHttp = mock[HttpClient]
-    val connector = new RouterAuthConnector(mockHttp, testConfig, fakeLogger)
+    val connector = new RouterAuthConnector(mockHttp, fakeLogger, testConfig)
     "execute call to auth microservice to get the InternalUserIdentifier" in {
       val authResponse = InternalUserIdentifier("")
       when(mockHttp.GET(eqTo(s"$authUrl$ids"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(authResponse))
@@ -95,14 +95,14 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
       when(mockHttp.GET(eqTo(s"$authUrl$ids"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
       val result = intercept[RuntimeException](await(connector.getIds(ids)))
       result.getMessage shouldBe "error.resource_access_failure"
-      verify(fakeLogger).warn(s"Unable to retrieve internal Identifier with idUri $ids", result)
+      verify(fakeLogger).warn(s"Was unable to execute call to auth for $ids", result)
     }
   }
 
   "getEnrolments" should {
     val enrolment = "1"
     val mockHttp = mock[HttpClient]
-    val connector = new RouterAuthConnector(mockHttp, testConfig, fakeLogger)
+    val connector = new RouterAuthConnector(mockHttp, fakeLogger, testConfig)
     "execute call to auth microservice to get the GovernmentGatewayEnrolment" in {
       val authResponse = Seq(GovernmentGatewayEnrolment("1", Seq(EnrolmentIdentifier("1", "test")), ""))
       when(mockHttp.GET(eqTo(s"$authUrl$enrolment"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(authResponse))
@@ -114,7 +114,7 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
       when(mockHttp.GET(eqTo(s"$authUrl$enrolment"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
       val result = intercept[RuntimeException](await(connector.getEnrolments(enrolment)))
       result.getMessage shouldBe "error.resource_access_failure"
-      verify(fakeLogger).warn(s"Unable to retrieve gg enrolment with enrolment Uri $enrolment", result)
+      verify(fakeLogger).warn(s"Was unable to execute call to auth for $enrolment", result)
     }
   }
 

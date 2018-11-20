@@ -20,48 +20,79 @@ import javax.inject.{Inject, Singleton}
 import org.slf4j.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{Format, Json, Reads, __}
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.http.{NotFoundException, _}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.inject.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RouterAuthConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesConfig, log: Logger)(implicit ec: ExecutionContext) {
-  lazy val serviceUrl: String = servicesConfig.baseUrl("auth")
+class RouterAuthConnector @Inject()(httpClient: HttpClient, log: Logger, servicesConfig: ServicesConfig)(implicit ec: ExecutionContext) {
+  private val serviceUrl: String = servicesConfig.baseUrl("auth")
 
+  //Appears to return Upstream4xxResponse in case of problems
   def currentUserAuthority()(implicit hc: HeaderCarrier): Future[UserAuthority] = {
-    httpClient.GET[UserAuthority](s"$serviceUrl/auth/authority").recover {
+    httpClient.GET[UserAuthority](s"$serviceUrl/auth/authority").recoverWith {
+      case up4xx @ (_: NotFoundException | _: Upstream4xxResponse) => {
+        log.warn("we made a request that auth was unable to handle", up4xx)
+        Future.failed(up4xx)
+      }
+      case up5xx: Upstream5xxResponse => {
+        log.warn("auth was unable to handle the request", up5xx)
+        Future.failed(up5xx)
+      }
       case e: Throwable => {
-        log.warn("Unable to retrieve current user", e)
+        log.warn("Was unable to execute call to auth", e)
         throw e
       }
     }
   }
 
-  def userAuthority(credId: String)(implicit hc: HeaderCarrier): Future[Option[UserAuthority]] = {
-    httpClient.GET[Option[UserAuthority]](s"$serviceUrl/auth/gg/$credId").recover {
-      case _: NotFoundException => None
+  //Appears to return status 404 in case of problem
+  def userAuthority(credId: String)(implicit hc: HeaderCarrier): Future[UserAuthority] = {
+    httpClient.GET[UserAuthority](s"$serviceUrl/auth/gg/$credId").recoverWith {
+      case nfe @ (_: NotFoundException | _: Upstream4xxResponse) => {
+        log.warn(s"we made a request for credId $credId that auth was unable to handle", nfe)
+        Future.failed(nfe)
+      }
+      case up5xx: Upstream5xxResponse => {
+        log.warn("auth was unable to handle the request for credId $credId", up5xx)
+        Future.failed(up5xx)
+      }
       case e: Throwable => {
-        log.warn(s"No user found with credId $credId", e)
+        log.warn(s"Was unable to execute call to auth for credId $credId", e)
         throw e
       }
     }
   }
 
+  //Appears to return status 404 passed down userAuthority
   def getIds(idsUri: String)(implicit hc: HeaderCarrier): Future[InternalUserIdentifier] = {
-    httpClient.GET[InternalUserIdentifier](s"$serviceUrl$idsUri").recover {
+    httpClient.GET[InternalUserIdentifier](s"$serviceUrl$idsUri").recoverWith {
+      case nfe @ (_: NotFoundException | _: Upstream4xxResponse) => {
+        log.warn(s"we made a request for $idsUri that auth was unable to handle", nfe)
+        Future.failed(nfe)
+      }
+      case up5xx: Upstream5xxResponse => {
+        log.warn(s"auth was unable to handle the request for $idsUri", up5xx)
+        Future.failed(up5xx)
+      }
       case e: Throwable => {
-        log.warn(s"Unable to retrieve internal Identifier with idUri $idsUri", e)
+        log.warn(s"Was unable to execute call to auth for $idsUri", e)
         throw e
       }
     }
   }
 
+  //Appears to never return an error!
   def getEnrolments(enrolmentsUri: String)(implicit hc: HeaderCarrier): Future[Seq[Any]] = {
-    httpClient.GET[Seq[GovernmentGatewayEnrolment]](s"$serviceUrl$enrolmentsUri").recover {
+    httpClient.GET[Seq[GovernmentGatewayEnrolment]](s"$serviceUrl$enrolmentsUri").recoverWith {
+      case up5xx: Upstream5xxResponse => {
+        log.warn(s"auth was unable to handle the request for $enrolmentsUri", up5xx)
+        Future.failed(up5xx)
+      }
       case e: Throwable => {
-        log.warn(s"Unable to retrieve gg enrolment with enrolment Uri $enrolmentsUri", e)
+        log.warn(s"Was unable to execute call to auth for $enrolmentsUri", e)
         throw e
       }
     }

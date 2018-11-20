@@ -19,27 +19,32 @@ package uk.gov.hmrc.taxaccountrouter.connectors
 import javax.inject.{Inject, Singleton}
 import org.slf4j.Logger
 import play.api.libs.json._
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException, Upstream4xxResponse, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.inject.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class SelfAssessmentConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesConfig, log: Logger)(implicit hc: HeaderCarrier, ec: ExecutionContext) {
-  def serviceUrl:String = servicesConfig.baseUrl("sa")
+class SelfAssessmentConnector @Inject()(httpClient: HttpClient, log: Logger, servicesConfig: ServicesConfig)(implicit hc: HeaderCarrier, ec: ExecutionContext) {
+  private val serviceUrl:String = servicesConfig.baseUrl("sa")
 
-  def lastReturn(utr: String): Future[Option[SaReturn]] = {
-    httpClient.GET[Option[SaReturn]](s"$serviceUrl/sa/individual/$utr/return/last").recover{
-      case _: NotFoundException => None
+  //returns 404 in case of problem
+  def lastReturn(utr: String): Future[SaReturn] = {
+    httpClient.GET[SaReturn](s"$serviceUrl/sa/individual/$utr/return/last").recoverWith {
+      case nfe @ (_: NotFoundException | _: Upstream4xxResponse) =>
+        Future.successful(SaReturn.noSaReturn)
+      case up5xx: Upstream5xxResponse =>
+        log.warn(s"SA was unable to handle the request for $utr", up5xx)
+        Future.failed(up5xx)
       case e: Throwable =>
-        log.warn(s"Unable to retrieve last SA return for user with utr $utr", e)
+        log.warn(s"Was unable to execute call to SA for $utr", e)
         throw e
     }
   }
 
-  def lastReturn(userAuthority: UserAuthority): Future[Option[SaReturn]] = {
-    userAuthority.saUtr.fold(Future.successful(Option(SaReturn.noSaReturn)))(saUtr => lastReturn(saUtr))
+  def lastReturn(userAuthority: UserAuthority): Future[SaReturn] = {
+    userAuthority.saUtr.fold(Future.successful(SaReturn.noSaReturn))(saUtr => lastReturn(saUtr))
   }
 }
 

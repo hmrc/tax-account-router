@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import org.slf4j.Logger
 import play.api.libs.json.{Json, Reads}
 import uk.gov.hmrc.auth.core.{CredentialRole, User}
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException, Upstream4xxResponse, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -28,18 +28,25 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class UserDetailsConnector @Inject()(httpClient: HttpClient, log: Logger)(implicit hc: HeaderCarrier, ec: ExecutionContext){
 
-  def getUserDetails(userDetailsUri: String): Future[UserDetail] = httpClient.GET[UserDetail](userDetailsUri).recover{
+  //Returns status 404 in case of problems
+  def getUserDetails(userDetailsUri: String): Future[UserDetail] = httpClient.GET[UserDetail](userDetailsUri).recoverWith {
+    case nfe @ (_: NotFoundException | _: Upstream4xxResponse) => {
+      log.warn(s"we made a request for $userDetailsUri that User-Details was unable to handle", nfe)
+      Future.failed(nfe)
+    }
+    case up5xx: Upstream5xxResponse => {
+      log.warn(s"User-Details was unable to handle the request for $userDetailsUri", up5xx)
+      Future.failed(up5xx)
+    }
     case e: Throwable =>
-      log.warn(s"Unable to retrieve user details with uri $userDetailsUri", e)
+      log.warn(s"Was unable to execute call to User-Details for $userDetailsUri", e)
       throw e
   }
 
   def getUserDetails(userAuthority: UserAuthority): Future[UserDetail] = {
-    getUserDetails(userAuthority.userDetailsUri.getOrElse{
-      val e = new NotFoundException("no userDetailsUri found in UserAuthority")
-      log.warn("user Authority did not contain a userDetailsUri", e)
-      throw e
-    })
+    userAuthority.userDetailsUri.fold[Future[UserDetail]](Future.failed(new NotFoundException("no userDetailsUri found in UserAuthority"))) {
+      userDetailsUri => getUserDetails(userDetailsUri)
+    }
   }
 }
 

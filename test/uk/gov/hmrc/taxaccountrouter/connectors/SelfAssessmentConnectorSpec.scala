@@ -39,34 +39,34 @@ class SelfAssessmentConnectorSpec extends UnitSpec with MockitoSugar with ScalaF
   "lastReturn" should {
     val mockHttp = mock[HttpClient]
     val utr = "1"
-    val connector = new SelfAssessmentConnector(mockHttp, testConfig, fakeLogger)
+    val connector = new SelfAssessmentConnector(mockHttp, fakeLogger, testConfig)
     "execute a call to sa returning an SaReturn" in {
-      val saResponse = Some(SaReturn(List("partnership")))
+      val saResponse = SaReturn(List("partnership"))
       when(mockHttp.GET(eqTo(s"$saUrl/sa/individual/$utr/return/last"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(saResponse))
       val result = await(connector.lastReturn(utr))
-      result shouldBe Some(SaReturn(List("partnership")))
+      result shouldBe SaReturn(List("partnership"))
       verify(mockHttp).GET(eqTo(s"$saUrl/sa/individual/$utr/return/last"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])
     }
     "execute a call to user-details that returns and logs an error" in {
       when(mockHttp.GET(eqTo(s"$saUrl/sa/individual/$utr/return/last"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
       val result = intercept[RuntimeException](await(connector.lastReturn(utr)))
       result.getMessage shouldBe "error.resource_access_failure"
-      verify(fakeLogger).warn(s"Unable to retrieve last SA return for user with utr $utr", result)
+      verify(fakeLogger).warn(s"Was unable to execute call to SA for $utr", result)
     }
     "when no SA is found an empty SaReturn is returned" in {
       when(mockHttp.GET(eqTo(s"$saUrl/sa/individual/$utr/return/last"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new NotFoundException("")))
       val result = await(connector.lastReturn(utr))
-      result shouldBe None
+      result shouldBe SaReturn.noSaReturn
     }
   }
 
   "lastReturn with UserAuthority" should {
     val mockHttp = mock[HttpClient]
     val utr = "1"
-    val connector = new SelfAssessmentConnector(mockHttp, testConfig, fakeLogger)
+    val connector = new SelfAssessmentConnector(mockHttp, fakeLogger, testConfig)
     "execute a call to sa returning an SaReturn" in {
       val userAuthority = new UserAuthority(None, None, None, None, "Weak", None, Some(utr))
-      val saResponse = Some(SaReturn(List("partnership")))
+      val saResponse = SaReturn(List("partnership"))
       when(mockHttp.GET(eqTo(s"$saUrl/sa/individual/$utr/return/last"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(saResponse))
       val result = await(connector.lastReturn(userAuthority))
       result shouldBe saResponse
@@ -77,19 +77,19 @@ class SelfAssessmentConnectorSpec extends UnitSpec with MockitoSugar with ScalaF
       when(mockHttp.GET(eqTo(s"$saUrl/sa/individual/$utr/return/last"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
       val result = intercept[RuntimeException](await(connector.lastReturn(userAuthority)))
       result.getMessage shouldBe "error.resource_access_failure"
-      verify(fakeLogger).warn(s"Unable to retrieve last SA return for user with utr $utr", result)
+      verify(fakeLogger).warn(s"Was unable to execute call to SA for $utr", result)
     }
     "when no utr is provided an empty SaReturn is returned" in {
       val userAuthority = new UserAuthority(None, None, None, None, "Weak", None, None)
       when(mockHttp.GET(eqTo(s"$saUrl/sa/individual/$utr/return/last"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
       val result = await(connector.lastReturn(userAuthority))
-      result shouldBe Some(SaReturn(List.empty))
+      result shouldBe SaReturn(List.empty)
     }
     "when no SA is found an empty SaReturn is returned" in {
       val userAuthority = new UserAuthority(None, None, None, None, "Weak", None, None)
       when(mockHttp.GET(eqTo(s"$saUrl/sa/individual/$utr/return/last"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new NotFoundException("")))
       val result = await(connector.lastReturn(userAuthority))
-      result shouldBe Some(SaReturn(List.empty))
+      result shouldBe SaReturn(List.empty)
     }
   }
 

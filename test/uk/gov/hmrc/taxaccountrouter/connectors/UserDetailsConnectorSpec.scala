@@ -52,7 +52,7 @@ class UserDetailsConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutu
       when(mockHttp.GET(eqTo(userDetailsUri))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
       val result = intercept[RuntimeException](await(connector.getUserDetails(userDetailsUri)))
       result.getMessage shouldBe "error.resource_access_failure"
-      verify(fakeLogger).warn(s"Unable to retrieve user details with uri $userDetailsUri", result)
+      verify(fakeLogger).warn(s"Was unable to execute call to User-Details for $userDetailsUri", result)
     }
   }
 
@@ -73,14 +73,13 @@ class UserDetailsConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutu
       when(mockHttp.GET(eqTo(userDetailsUri))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
       val result = intercept[RuntimeException](await(connector.getUserDetails(request)))
       result.getMessage shouldBe "error.resource_access_failure"
-      verify(fakeLogger).warn(s"Unable to retrieve user details with uri $userDetailsUri", result)
+      verify(fakeLogger).warn(s"Was unable to execute call to User-Details for $userDetailsUri", result)
     }
     "throw error when no userDetailsUri is provided" in {
       val request = new UserAuthority(None, None, None, None, "Weak", None, None)
       when(mockHttp.GET(eqTo(userDetailsUri))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
       val result = intercept[NotFoundException](await(connector.getUserDetails(request)))
       result.getMessage shouldBe "no userDetailsUri found in UserAuthority"
-      verify(fakeLogger).warn("user Authority did not contain a userDetailsUri", result)
     }
   }
 
