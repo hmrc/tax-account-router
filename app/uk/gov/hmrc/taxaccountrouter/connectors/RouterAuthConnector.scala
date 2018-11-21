@@ -56,7 +56,7 @@ class RouterAuthConnector @Inject()(httpClient: HttpClient, log: Logger, service
         Future.failed(nfe)
       }
       case up5xx: Upstream5xxResponse => {
-        log.warn("auth was unable to handle the request for credId $credId", up5xx)
+        log.warn(s"auth was unable to handle the request for credId $credId", up5xx)
         Future.failed(up5xx)
       }
       case e: Throwable => {
@@ -74,7 +74,7 @@ class RouterAuthConnector @Inject()(httpClient: HttpClient, log: Logger, service
         Future.failed(nfe)
       }
       case up5xx: Upstream5xxResponse => {
-        log.warn(s"auth was unable to handle the request for $idsUri", up5xx)
+        log.warn(s"auth was unable to handle the request for id $idsUri", up5xx)
         Future.failed(up5xx)
       }
       case e: Throwable => {
@@ -88,7 +88,7 @@ class RouterAuthConnector @Inject()(httpClient: HttpClient, log: Logger, service
   def getEnrolments(enrolmentsUri: String)(implicit hc: HeaderCarrier): Future[Seq[Any]] = {
     httpClient.GET[Seq[GovernmentGatewayEnrolment]](s"$serviceUrl$enrolmentsUri").recoverWith {
       case up5xx: Upstream5xxResponse => {
-        log.warn(s"auth was unable to handle the request for $enrolmentsUri", up5xx)
+        log.warn(s"auth was unable to handle the request for enrolment $enrolmentsUri", up5xx)
         Future.failed(up5xx)
       }
       case e: Throwable => {

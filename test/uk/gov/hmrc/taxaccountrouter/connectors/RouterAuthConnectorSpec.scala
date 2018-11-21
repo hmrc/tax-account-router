@@ -26,7 +26,7 @@ import play.api.libs.json.Json
 
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.domain.{Nino, SaUtr}
-import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, NotFoundException}
+import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.test.UnitSpec
@@ -54,6 +54,18 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
       result.getMessage shouldBe "error.resource_access_failure"
       verify(fakeLogger).warn("Was unable to execute call to auth", result)
     }
+    "execute call to auth microservice is rejected" in {
+      when(mockHttp.GET(eqTo(s"$authUrl/auth/authority"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(Upstream5xxResponse("error.resource_access_failure", 500, 500)))
+      val result = intercept[Upstream5xxResponse](await(connector.currentUserAuthority()))
+      result.getMessage shouldBe "error.resource_access_failure"
+      verify(fakeLogger).warn("auth was unable to handle the request", result)
+    }
+    "execute call to auth microservice returned 4xx error" in {
+      when(mockHttp.GET(eqTo(s"$authUrl/auth/authority"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(Upstream4xxResponse("error.resource_access_failure", 500, 500)))
+      val result = intercept[Upstream4xxResponse](await(connector.currentUserAuthority()))
+      result.getMessage shouldBe "error.resource_access_failure"
+      verify(fakeLogger).warn("we made a request that auth was unable to handle", result)
+    }
   }
 
   "userAuthority" should {
@@ -77,6 +89,19 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
       when(mockHttp.GET(eqTo(s"$authUrl/auth/gg/$credId"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new NotFoundException("error.resource_access_failure")))
       val result = intercept[NotFoundException](await(connector.userAuthority(credId)))
       result.getMessage shouldBe "error.resource_access_failure"
+      verify(fakeLogger).warn(s"we made a request for credId $credId that auth was unable to handle", result)
+    }
+    "execute call to auth microservice is rejected" in {
+      when(mockHttp.GET(eqTo(s"$authUrl/auth/gg/$credId"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(Upstream5xxResponse("error.resource_access_failure", 500, 500)))
+      val result = intercept[Upstream5xxResponse](await(connector.userAuthority(credId)))
+      result.getMessage shouldBe "error.resource_access_failure"
+      verify(fakeLogger).warn(s"auth was unable to handle the request for credId $credId", result)
+    }
+    "execute call to auth microservice returned 4xx error" in {
+      when(mockHttp.GET(eqTo(s"$authUrl/auth/gg/$credId"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(Upstream4xxResponse("error.resource_access_failure", 500, 500)))
+      val result = intercept[Upstream4xxResponse](await(connector.userAuthority(credId)))
+      result.getMessage shouldBe "error.resource_access_failure"
+      verify(fakeLogger).warn(s"we made a request for credId $credId that auth was unable to handle", result)
     }
   }
 
@@ -97,6 +122,18 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
       result.getMessage shouldBe "error.resource_access_failure"
       verify(fakeLogger).warn(s"Was unable to execute call to auth for $ids", result)
     }
+    "execute call to auth microservice is rejected" in {
+      when(mockHttp.GET(eqTo(s"$authUrl$ids"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(Upstream5xxResponse("error.resource_access_failure", 500, 500)))
+      val result = intercept[Upstream5xxResponse](await(connector.getIds(ids)))
+      result.getMessage shouldBe "error.resource_access_failure"
+      verify(fakeLogger).warn(s"auth was unable to handle the request for id $ids", result)
+    }
+    "execute call to auth microservice returned 4xx error" in {
+      when(mockHttp.GET(eqTo(s"$authUrl$ids"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(Upstream4xxResponse("error.resource_access_failure", 500, 500)))
+      val result = intercept[Upstream4xxResponse](await(connector.getIds(ids)))
+      result.getMessage shouldBe "error.resource_access_failure"
+      verify(fakeLogger).warn(s"we made a request for $ids that auth was unable to handle", result)
+    }
   }
 
   "getEnrolments" should {
@@ -115,6 +152,12 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
       val result = intercept[RuntimeException](await(connector.getEnrolments(enrolment)))
       result.getMessage shouldBe "error.resource_access_failure"
       verify(fakeLogger).warn(s"Was unable to execute call to auth for $enrolment", result)
+    }
+    "execute call to auth microservice is rejected" in {
+      when(mockHttp.GET(eqTo(s"$authUrl$enrolment"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(Upstream5xxResponse("error.resource_access_failure", 500, 500)))
+      val result = intercept[Upstream5xxResponse](await(connector.getEnrolments(enrolment)))
+      result.getMessage shouldBe "error.resource_access_failure"
+      verify(fakeLogger).warn(s"auth was unable to handle the request for enrolment $enrolment", result)
     }
   }
 

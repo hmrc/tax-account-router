@@ -14,8 +14,8 @@ object AppDependencies {
     "com.typesafe.play"       %% "play-test"                % current                 % "test",
     "org.mockito"             % "mockito-core"              % "2.23.0"                % "test",
     "org.pegdown"             %  "pegdown"                  % "1.6.0"                 % "test, it",
-    "org.scalatest"           %% "scalatest"                % "3.0.4"                 % "test",
-    "org.scalatestplus.play"  %% "scalatestplus-play"       % "2.0.0"                 % "test, it",
+    "org.scalatest"           %% "scalatest"                % "3.0.5"                 % "test",
+    "org.scalatestplus.play"  %% "scalatestplus-play"       % "3.1.2"                 % "test, it",
     "uk.gov.hmrc"             %% "frontend-bootstrap"       % "8.24.0"                % "test",
     "uk.gov.hmrc"             %% "hmrctest"                 % "3.2.0"                 % "test",
     "uk.gov.hmrc"             %% "service-integration-test" % "0.2.0"                 % "test, it"

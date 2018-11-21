@@ -17,14 +17,32 @@
 package uk.gov.hmrc.taxaccountrouter.controllers
 
 import javax.inject.{Inject, Singleton}
+import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import uk.gov.hmrc.taxaccountrouter.connectors.{RouterAuthConnector, UserDetailsConnector}
+import uk.gov.hmrc.taxaccountrouter.model.RuleContext
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RouterController @Inject()(cc: ControllerComponents)(implicit ec:ExecutionContext) extends BackendController(cc) {
+class RouterController @Inject()(authConnector: RouterAuthConnector, userDetailsConnector: UserDetailsConnector, cc: ControllerComponents)(implicit ec: ExecutionContext) extends BackendController(cc) {
   def hello(): Action[AnyContent] = Action.async { implicit request =>
     Future.successful(Ok("Hello world"))
+  }
+
+  def routeAccount(): Action[AnyContent] = Action.async { implicit request =>
+    Future.successful(Ok("Hello world"))
+  }
+
+  def accountType(credId: String): Action[AnyContent] = Action.async { implicit request =>
+    val ruleContext = new RuleContext(Some(credId))(authConnector, userDetailsConnector)
+    ruleContext.userDetails.map {
+      ud =>  Ok(Json.toJson(s"Hello ${ud.affinityGroup}"))
+    }.recover {
+      case e =>
+//        log.warn("Unable to get user details from downstream.", e)
+        InternalServerError("Unable to get user details from downstream.")
+    }
   }
 }

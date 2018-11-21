@@ -16,20 +16,53 @@
 
 package uk.gov.hmrc.taxaccountrouter.controllers
 
-import org.scalatest._
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import org.mockito.ArgumentMatchers.{any, eq => eqTo}
+import org.mockito.Mockito._
+import org.scalatest.mockito.MockitoSugar
 import play.api.http.Status
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.stubControllerComponents
+import uk.gov.hmrc.auth.core.User
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.taxaccountrouter.connectors.{RouterAuthConnector, UserAuthority, UserDetail, UserDetailsConnector}
 
-class RouterControllerSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite with OptionValues  {
+import scala.concurrent.ExecutionContext
 
-  lazy val fakeRequest = FakeRequest("GET", routes.RouterController.hello().url)
+class RouterControllerSpec extends MockitoSugar with UnitSpec  {
+  implicit val hc: HeaderCarrier = HeaderCarrier()
+  implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
+  val mockAuthConnector: RouterAuthConnector = mock[RouterAuthConnector]
+  val mockUserDetailsConnector: UserDetailsConnector = mock[UserDetailsConnector]
+  val controller: RouterController = new RouterController(mockAuthConnector, mockUserDetailsConnector, stubControllerComponents())
 
-  "GET /tax-account-router/hello-world" - {
+  "GET /tax-account-router/hello-world" should {
+    val request = FakeRequest()
     "return OK" in {
-      val result = route(app, fakeRequest).value
-      status(result) mustEqual Status.OK
+      val result = await(controller.hello()(request))
+      status(result) shouldBe Status.OK
+    }
+  }
+
+  "GET /" should {
+    val request = FakeRequest()
+    "return OK" in {
+      val result = await(controller.routeAccount()(request))
+      status(result) shouldBe Status.OK
+    }
+  }
+
+  "GET /accountType" should {
+    val credId = "id"
+    val authority = new UserAuthority(None, None, Some("userDetail-uri"), None, "None", None, None)
+    lazy val request = FakeRequest()
+    "return OK" in {
+      val authResponse = UserAuthority(Some("twoFactorId"), Some("idsUri"), Some("userDetailsUri"), Some("enrolmentsUri"), "Weak", Some("nino"), Some("saUtr"))
+      val userResponse = UserDetail(Some(User), "Test")
+      when(mockAuthConnector.userAuthority(eqTo(credId))(any[HeaderCarrier])).thenReturn(authResponse)
+      when(mockUserDetailsConnector.getUserDetails(eqTo(authResponse))).thenReturn(userResponse)
+      val result = await(controller.accountType(credId)(request))
+      status(result) shouldBe Status.OK
     }
   }
 }
