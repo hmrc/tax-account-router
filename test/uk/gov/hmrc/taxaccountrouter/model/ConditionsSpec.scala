@@ -20,7 +20,7 @@ import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.taxaccountrouter.connectors.{GovernmentGatewayEnrolment, SaReturn, UserDetail}
+import uk.gov.hmrc.taxaccountrouter.connectors.{GovernmentGatewayEnrolment, SaReturn, UserAuthority, UserDetail}
 import uk.gov.hmrc.taxaccountrouter.model.Conditions._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -28,6 +28,81 @@ import scala.concurrent.{ExecutionContext, Future}
 class ConditionsSpec extends UnitSpec with MockitoSugar with ScalaFutures {
   implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
   val mockRuleContext: RuleContext = mock[RuleContext]
+
+  "enrolmentAvailable" should {
+    "return true if there is an enrolment" in {
+      val mockRuleContext: RuleContext = mock[RuleContext]
+      val contextResponse = Seq(GovernmentGatewayEnrolment("1", Seq.empty, "HandedToAgent"))
+      when(mockRuleContext.enrolments).thenReturn(contextResponse)
+      val result = await(enrolmentAvailable(mockRuleContext))
+      result shouldBe true
+    }
+    "return false if state is no enrolment" in {
+      val mockRuleContext: RuleContext = mock[RuleContext]
+      val contextResponse = Future.failed(new RuntimeException("error"))
+      when(mockRuleContext.enrolments).thenReturn(contextResponse)
+      val result = await(enrolmentAvailable(mockRuleContext))
+      result shouldBe false
+    }
+  }
+
+  "fromVerify" should {
+    "return false if credId and token is present" in {
+      when(mockRuleContext.credId).thenReturn(Some("credId"))
+      when(mockRuleContext.sessionData).thenReturn(Map(("token", "present")))
+      val result = await(fromVerify(mockRuleContext))
+      result shouldBe false
+    }
+    "return false if credId is not present but token is" in {
+      when(mockRuleContext.credId).thenReturn(None)
+      when(mockRuleContext.sessionData).thenReturn(Map(("token", "present")))
+      val result = await(fromVerify(mockRuleContext))
+      result shouldBe false
+    }
+    "return false if credId is present but token is not" in {
+      when(mockRuleContext.credId).thenReturn(Some("credId"))
+      when(mockRuleContext.sessionData).thenReturn(Map(("notoken", "present")))
+      val result = await(fromVerify(mockRuleContext))
+      result shouldBe false
+    }
+    "return true if credId and token are not present" in {
+      when(mockRuleContext.credId).thenReturn(None)
+      when(mockRuleContext.sessionData).thenReturn(Map(("notoken", "present")))
+      val result = await(fromVerify(mockRuleContext))
+      result shouldBe true
+    }
+  }
+
+  "fromGG" should {
+    "return true if credId and token is present" in {
+      val mockRuleContext: RuleContext = mock[RuleContext]
+      when(mockRuleContext.credId).thenReturn(Some("credId"))
+      when(mockRuleContext.sessionData).thenReturn(Map(("token", "present")))
+      val result = await(fromGG(mockRuleContext))
+      result shouldBe true
+    }
+    "return true if credId is not present but token is" in {
+      val mockRuleContext: RuleContext = mock[RuleContext]
+      when(mockRuleContext.credId).thenReturn(None)
+      when(mockRuleContext.sessionData).thenReturn(Map(("token", "present")))
+      val result = await(fromGG(mockRuleContext))
+      result shouldBe true
+    }
+    "return true if credId is present but token is not" in {
+      val mockRuleContext: RuleContext = mock[RuleContext]
+      when(mockRuleContext.credId).thenReturn(Some("credId"))
+      when(mockRuleContext.sessionData).thenReturn(Map(("notoken", "present")))
+      val result = await(fromGG(mockRuleContext))
+      result shouldBe true
+    }
+    "return false if credId and token are not present" in {
+      val mockRuleContext: RuleContext = mock[RuleContext]
+      when(mockRuleContext.credId).thenReturn(None)
+      when(mockRuleContext.sessionData).thenReturn(Map(("notoken", "present")))
+      val result = await(fromGG(mockRuleContext))
+      result shouldBe false
+    }
+  }
 
   "hasAffinityGroup" should{
     "return true if affinityGroup is present" in {
@@ -41,6 +116,13 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with ScalaFutures {
       when(mockRuleContext.userDetails).thenReturn(contextResponse)
       val result = await(hasAffinityGroup(mockRuleContext))
       result shouldBe false
+    }
+  }
+
+  "hasBusinessEnrolment" should {
+    "fail as not implemented" in {
+      val mockRuleContext: RuleContext = mock[RuleContext]
+      assert(false)
     }
   }
 
@@ -58,6 +140,28 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with ScalaFutures {
       when(mockRuleContext.enrolments).thenReturn(contextResponse)
       val result = await(hasInactiveEnrolments(mockRuleContext))
       result shouldBe false
+    }
+  }
+
+  "hasNino" should {
+    "return true if there is a nino" in {
+      val contextResponse = UserAuthority(None, None, None, None, "Weak", Some("nino"), None)
+      when(mockRuleContext.authority).thenReturn(contextResponse)
+      val result = await(hasNino(mockRuleContext))
+      result shouldBe true
+    }
+    "return false if there is no nino" in {
+      val contextResponse = UserAuthority(None, None, None, None, "Weak", None, None)
+      when(mockRuleContext.authority).thenReturn(contextResponse)
+      val result = await(hasNino(mockRuleContext))
+      result shouldBe false
+    }
+  }
+
+  "hasSaEnrolment" should {
+    "fail as not implemented" in {
+      val mockRuleContext: RuleContext = mock[RuleContext]
+      assert(false)
     }
   }
 
