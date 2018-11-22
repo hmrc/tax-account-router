@@ -17,16 +17,25 @@
 package uk.gov.hmrc.taxaccountrouter.model
 
 import javax.inject.Inject
+import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.taxaccountrouter.connectors.{RouterAuthConnector, UserAuthority, UserDetail, UserDetailsConnector}
+import uk.gov.hmrc.taxaccountrouter.connectors._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class RuleContext @Inject()(credId: Option[String])(authConnector: RouterAuthConnector, userDetailsConnector: UserDetailsConnector)(implicit hc: HeaderCarrier, ec: ExecutionContext) {
+case class RuleContext @Inject()(credId: Option[String])(authConnector: RouterAuthConnector, userDetailsConnector: UserDetailsConnector, selfAssessmentConnector: SelfAssessmentConnector)(implicit request: Request[AnyContent], hc: HeaderCarrier, ec: ExecutionContext) {
+  val sessionData: Map[String, String] = request.session.data
+
   lazy val authority: Future[UserAuthority] = credId.fold(authConnector.currentUserAuthority()) {
     id => authConnector.userAuthority(id)
   }
   lazy val userDetails: Future[UserDetail] = authority.flatMap {
-    auth => userDetailsConnector.getUserDetails(auth)
+    authority => userDetailsConnector.getUserDetails(authority)
+  }
+  lazy val enrolments: Future[Seq[GovernmentGatewayEnrolment]] = authority.flatMap {
+    authority => authConnector.getEnrolments(authority)
+  }
+  lazy val lastSaReturn: Future[SaReturn] = authority.flatMap {
+    authority => selfAssessmentConnector.lastReturn(authority)
   }
 }

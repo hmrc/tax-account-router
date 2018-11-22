@@ -21,27 +21,31 @@ import org.slf4j.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
-import uk.gov.hmrc.taxaccountrouter.connectors.{RouterAuthConnector, UserDetailsConnector}
+import uk.gov.hmrc.taxaccountrouter.connectors.{RouterAuthConnector, SelfAssessmentConnector, UserDetailsConnector}
+import uk.gov.hmrc.taxaccountrouter.engine.RuleEngine
 import uk.gov.hmrc.taxaccountrouter.model.RuleContext
+import uk.gov.hmrc.taxaccountrouter.rulesets.AccountType
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RouterController @Inject()(authConnector: RouterAuthConnector, userDetailsConnector: UserDetailsConnector, cc: ControllerComponents, log: Logger)(implicit ec: ExecutionContext) extends BackendController(cc) {
+class RouterController @Inject()(authConnector: RouterAuthConnector, userDetailsConnector: UserDetailsConnector, selfAssessmentConnector: SelfAssessmentConnector, cc: ControllerComponents, log: Logger)(implicit ec: ExecutionContext) extends BackendController(cc) {
   def hello(): Action[AnyContent] = Action.async { implicit request =>
     Future.successful(Ok("Hello world"))
   }
 
   def routeAccount(): Action[AnyContent] = Action.async { implicit request =>
-    val ruleContext = new RuleContext(None)(authConnector, userDetailsConnector)
+    val ruleContext = RuleContext(None)(authConnector, userDetailsConnector, selfAssessmentConnector)
     val destination = "dest"
     Future.successful(Ok("Hello world"))
   }
 
   def accountType(credId: String): Action[AnyContent] = Action.async { implicit request =>
-    val ruleContext = new RuleContext(Some(credId))(authConnector, userDetailsConnector)
+    val ruleContext = RuleContext(Some(credId))(authConnector, userDetailsConnector, selfAssessmentConnector)
     ruleContext.userDetails.map {
-      ud =>  Ok(Json.toJson(s"Hello ${ud.affinityGroup}"))
+      ud =>
+        new RuleEngine(log).assessLogged(AccountType.rules(ruleContext))
+        Ok(Json.toJson(s"Hello ${ud.affinityGroup}"))
     }.recover {
       case e =>
         log.warn("Unable to get user details from downstream.", e)

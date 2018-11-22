@@ -28,7 +28,7 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core.User
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.taxaccountrouter.connectors.{RouterAuthConnector, UserAuthority, UserDetail, UserDetailsConnector}
+import uk.gov.hmrc.taxaccountrouter.connectors._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -38,7 +38,8 @@ class RouterControllerSpec extends MockitoSugar with UnitSpec {
   val fakeLogger: Logger = mock[Logger]
   val mockAuthConnector: RouterAuthConnector = mock[RouterAuthConnector]
   val mockUserDetailsConnector: UserDetailsConnector = mock[UserDetailsConnector]
-  val controller: RouterController = new RouterController(mockAuthConnector, mockUserDetailsConnector, stubControllerComponents(), fakeLogger)
+  val mockSelfAssessmentConnector: SelfAssessmentConnector = mock[SelfAssessmentConnector]
+  val controller: RouterController = new RouterController(mockAuthConnector, mockUserDetailsConnector, mockSelfAssessmentConnector, stubControllerComponents(), fakeLogger)
 
   "GET /tax-account-router/hello-world" should {
     val request = FakeRequest()

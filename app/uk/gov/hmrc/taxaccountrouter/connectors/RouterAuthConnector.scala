@@ -85,15 +85,18 @@ class RouterAuthConnector @Inject()(httpClient: HttpClient, log: Logger, service
   }
 
   //Appears to never return an error!
-  def getEnrolments(enrolmentsUri: String)(implicit hc: HeaderCarrier): Future[Seq[Any]] = {
-    httpClient.GET[Seq[GovernmentGatewayEnrolment]](s"$serviceUrl$enrolmentsUri").recoverWith {
-      case up5xx: Upstream5xxResponse => {
-        log.warn(s"auth was unable to handle the request for enrolment $enrolmentsUri", up5xx)
-        Future.failed(up5xx)
-      }
-      case e: Throwable => {
-        log.warn(s"Was unable to execute call to auth for $enrolmentsUri", e)
-        throw e
+  def getEnrolments(authority: UserAuthority)(implicit hc: HeaderCarrier): Future[Seq[GovernmentGatewayEnrolment]] = {
+    authority.enrolmentsUri.fold(Future(Seq.empty[GovernmentGatewayEnrolment])) {
+      enrolmentsUri =>
+      httpClient.GET[Seq[GovernmentGatewayEnrolment]](s"$serviceUrl$enrolmentsUri").recoverWith {
+        case up5xx: Upstream5xxResponse => {
+          log.warn(s"auth was unable to handle the request for enrolment $enrolmentsUri", up5xx)
+          Future.failed(up5xx)
+        }
+        case e: Throwable => {
+          log.warn(s"Was unable to execute call to auth for $enrolmentsUri", e)
+          throw e
+        }
       }
     }
   }

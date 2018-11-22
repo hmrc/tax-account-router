@@ -137,27 +137,28 @@ class RouterAuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutur
   }
 
   "getEnrolments" should {
-    val enrolment = "1"
+    val uri = "enrolment/uri"
+    val enrolment = UserAuthority(None, None, None, Some(uri), "Weak", None, None)
     val mockHttp = mock[HttpClient]
     val connector = new RouterAuthConnector(mockHttp, fakeLogger, testConfig)
     "execute call to auth microservice to get the GovernmentGatewayEnrolment" in {
       val authResponse = Seq(GovernmentGatewayEnrolment("1", Seq(EnrolmentIdentifier("1", "test")), ""))
-      when(mockHttp.GET(eqTo(s"$authUrl$enrolment"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(authResponse))
+      when(mockHttp.GET(eqTo(s"$authUrl$uri"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(authResponse))
       val result = await(connector.getEnrolments(enrolment))
       result shouldBe authResponse
-      verify(mockHttp).GET(eqTo(s"$authUrl$enrolment"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])
+      verify(mockHttp).GET(eqTo(s"$authUrl$uri"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])
     }
     "execute call to auth microservice passes up and logs exception" in {
-      when(mockHttp.GET(eqTo(s"$authUrl$enrolment"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
+      when(mockHttp.GET(eqTo(s"$authUrl$uri"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(new RuntimeException("error.resource_access_failure")))
       val result = intercept[RuntimeException](await(connector.getEnrolments(enrolment)))
       result.getMessage shouldBe "error.resource_access_failure"
-      verify(fakeLogger).warn(s"Was unable to execute call to auth for $enrolment", result)
+      verify(fakeLogger).warn(s"Was unable to execute call to auth for $uri", result)
     }
     "execute call to auth microservice is rejected" in {
-      when(mockHttp.GET(eqTo(s"$authUrl$enrolment"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(Upstream5xxResponse("error.resource_access_failure", 500, 500)))
+      when(mockHttp.GET(eqTo(s"$authUrl$uri"))(any[HttpReads[Any]](), any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.failed(Upstream5xxResponse("error.resource_access_failure", 500, 500)))
       val result = intercept[Upstream5xxResponse](await(connector.getEnrolments(enrolment)))
       result.getMessage shouldBe "error.resource_access_failure"
-      verify(fakeLogger).warn(s"auth was unable to handle the request for enrolment $enrolment", result)
+      verify(fakeLogger).warn(s"auth was unable to handle the request for enrolment $uri", result)
     }
   }
 
