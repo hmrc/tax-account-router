@@ -26,16 +26,46 @@ import scala.concurrent.Future
 class AccountLocation @Inject()(conditions: Conditions) {
 
   def rules(context: RuleContext) = Seq(
-    "If logged in via Verify" -> (() => conditions.fromVerify(context)) -> "pta",
-    "If gg user with no enrolments" -> (() => all(conditions.fromGG(context), not(conditions.enrolmentAvailable(context)))) -> "bta",
-    "If gg user with a business enrolment" -> (() => all(conditions.fromGG(context), conditions.hasBusinessEnrolment(context))) -> "bta",
-    "If gg user with sa enrolment but sa offline" -> (() => all(conditions.fromGG(context), conditions.hasSaEnrolment(context), not(conditions.saReturnAvailable(context)))) -> "bta",
-    "If gg user with sa enrolment but no returns" -> (() => all(conditions.fromGG(context), conditions.hasSaEnrolment(context), not(conditions.hasSaReturn(context)))) -> "bta",
-    "If gg user with sa enrolment and in partnership or self employed" -> (() => all(conditions.fromGG(context), conditions.hasSaEnrolment(context), any(conditions.inPartnership(context), conditions.isSelfEmployed(context)))) -> "bta",
-    "If gg user with sa enrolment not in partnership or self employed no nino" -> (() => all(conditions.fromGG(context), conditions.hasSaEnrolment(context), not(conditions.inPartnership(context)), not(conditions.isSelfEmployed(context)), not(conditions.hasNino(context)))) -> "bta",
-    "If gg user with sa enrolment not in partnership or self employed" -> (() => all(conditions.fromGG(context), conditions.hasSaEnrolment(context), not(conditions.inPartnership(context)), not(conditions.isSelfEmployed(context)))) -> "pta",
-    "If no groups or inactive enrolments" -> (() => all(not(conditions.hasInactiveEnrolments(context)), not(conditions.hasAffinityGroup(context)))) -> "bta",
-    "If no inactive enrolments and is an individual" -> (() => all(not(conditions.hasInactiveEnrolments(context)), conditions.isIndividual(context))) -> "pta",
+    "If logged in via Verify" -> verifyRule(context) -> "pta",
+    "If gg user with no enrolments" -> noEnrolmentRule(context) -> "bta",
+    "If gg user with a business enrolment" -> businessEnrolmentRule(context) -> "bta",
+    "If gg user with sa enrolment but sa offline" -> saOfflineRule(context) -> "bta",
+    "If gg user with sa enrolment but no returns" -> noSaReturns(context) -> "bta",
+    "If gg user with sa enrolment and in partnership or self employed" -> selfEmployedOrPartnershipRule(context) -> "bta",
+    "If gg user with sa enrolment not in partnership or self employed no nino" -> missingNinoRule(context) -> "bta",
+    "If gg user with sa enrolment not in partnership or self employed" -> notSelfEmployedOrPartnershipRule(context) -> "pta",
+    "If no groups or inactive enrolments" -> noGroupsRule(context) -> "bta",
+    "If no inactive enrolments and is an individual" -> individualRule(context) -> "pta",
     "No rules matched" -> (() => Future(true)) -> "bta"
   )
+
+  protected def verifyRule(context: RuleContext): () => Future[Boolean] =
+    () => conditions.fromVerify(context)
+
+  protected def noEnrolmentRule(context: RuleContext): () => Future[Boolean] =
+    () => all(conditions.fromGG(context), not(conditions.enrolmentAvailable(context)))
+
+  protected def businessEnrolmentRule(context: RuleContext): () => Future[Boolean] =
+    () => all(conditions.fromGG(context), conditions.hasBusinessEnrolment(context))
+
+  protected def saOfflineRule(context: RuleContext): () => Future[Boolean] =
+    () => all(conditions.fromGG(context), conditions.hasSaEnrolment(context), not(conditions.saReturnAvailable(context)))
+
+  protected def noSaReturns(context: RuleContext): () => Future[Boolean] =
+    () => all(conditions.fromGG(context), conditions.hasSaEnrolment(context), not(conditions.hasSaReturn(context)))
+
+  protected def selfEmployedOrPartnershipRule(context: RuleContext): () => Future[Boolean] =
+    () => all(conditions.fromGG(context), conditions.hasSaEnrolment(context), any(conditions.inPartnership(context), conditions.isSelfEmployed(context)))
+
+  protected def missingNinoRule(context: RuleContext): () => Future[Boolean] =
+    () => all(conditions.fromGG(context), conditions.hasSaEnrolment(context), not(conditions.inPartnership(context)), not(conditions.isSelfEmployed(context)), not(conditions.hasNino(context)))
+
+  protected def notSelfEmployedOrPartnershipRule(context: RuleContext): () => Future[Boolean] =
+    () => all(conditions.fromGG(context), conditions.hasSaEnrolment(context), not(conditions.inPartnership(context)), not(conditions.isSelfEmployed(context)))
+
+  protected def noGroupsRule(context: RuleContext): () => Future[Boolean] =
+    () => all(not(conditions.hasInactiveEnrolments(context)), not(conditions.hasAffinityGroup(context)))
+
+  protected def individualRule(context: RuleContext): () => Future[Boolean] =
+    () => all(not(conditions.hasInactiveEnrolments(context)), conditions.isIndividual(context))
 }

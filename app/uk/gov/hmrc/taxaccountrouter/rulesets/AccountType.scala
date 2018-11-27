@@ -23,11 +23,19 @@ import uk.gov.hmrc.taxaccountrouter.model.{Conditions, RuleContext}
 
 import scala.concurrent.Future
 
-class AccountType @Inject()(conditions: Conditions) {
-  def rules(ruleContext: RuleContext) = Seq(
-    "Check if the user is an Agent" -> (() => conditions.isAgent(ruleContext)) -> "Agent",
-    "Check if the user is an Individual" -> (() => Future(true)) -> "Individual",
-    "Check if the user is an Organisation" -> (() => Future(true)) -> "Organisation",
-    "The user could not be identified" -> (() => Future(false)) -> "None"
+class AccountType @Inject()(conditions: Conditions) extends AccountLocation(conditions) {
+
+  override def rules(context: RuleContext) = Seq(
+    "Check if the user is an Agent" -> (() => conditions.isAgent(context)) -> "Agent",
+    "If logged in via Verify" -> verifyRule(context) -> "Individual",
+    "If gg user with no enrolments" -> noEnrolmentRule(context) -> "Organisation",
+    "If gg user with a business enrolment" -> businessEnrolmentRule(context) -> "Organisation",
+    "If gg user with sa enrolment but sa offline" -> saOfflineRule(context) -> "Organisation",
+    "If gg user with sa enrolment but no returns" -> noSaReturns(context) -> "Organisation",
+    "If gg user with sa enrolment and in partnership or self employed" -> selfEmployedOrPartnershipRule(context) -> "Organisation",
+    "If gg user with sa enrolment not in partnership or self employed no nino" -> missingNinoRule(context) -> "Organisation",
+    "If gg user with sa enrolment not in partnership or self employed" -> notSelfEmployedOrPartnershipRule(context) -> "Individual",
+    "If no groups or inactive enrolments" -> noGroupsRule(context) -> "Organisation",
+    "If no inactive enrolments and is an individual" -> individualRule(context) -> "Individual"
   )
 }

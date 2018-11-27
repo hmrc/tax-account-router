@@ -22,14 +22,6 @@ import org.slf4j.Logger
 import scala.concurrent.{ExecutionContext, Future}
 
 class RuleEngine @Inject()(log: Logger)(implicit ec: ExecutionContext) {
-  def assess[V](rules: Seq[(() => Future[Boolean], V)]): Future[Option[V]] = {
-    rules.foldLeft(Future(Option.empty[V])){(accum, curr) =>
-      accum flatMap {
-        case v@Some(_) => Future(v)
-        case None => curr._1().map {if (_) Some(curr._2) else None}
-      }
-    }
-  }
 
   def assessLogged[V](rules: Seq[((String, () => Future[Boolean]), String)], ruleset: String = "test"): Future[Option[String]] = {
     log.info(s"assessing ruleset $ruleset")
