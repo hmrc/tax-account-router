@@ -26,10 +26,8 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.language.postfixOps
-
-import uk.gov.hmrc.taxaccountrouter.connectors.UserDetail
 import uk.gov.hmrc.taxaccountrouter.engine.RuleEngine
-import uk.gov.hmrc.taxaccountrouter.model.RuleContext
+import uk.gov.hmrc.taxaccountrouter.model.{Conditions, RuleContext}
 
 import scala.concurrent.{Await, Future}
 
@@ -38,11 +36,13 @@ class AccountTypeSpec extends FunSuite with ScalaFutures with MockitoSugar {
   val realLogger:Logger = LoggerFactory.getLogger("testLogger")
   val engine: RuleEngine = new RuleEngine(fakeLogger)
   val mockRuleContext: RuleContext = mock[RuleContext]
+  val mockConditions: Conditions = mock[Conditions]
+  val accountType: AccountType = new AccountType(mockConditions)
 
   test("Rule 'Check if the user is an Agent' is triggered if the user has an account type of Agent") {
     val expected = "Agent"
-    when(mockRuleContext.userDetails).thenReturn(Future(new UserDetail(None, expected)))
-    val result = Await.result(engine.assessLogged(AccountType.rules(mockRuleContext)), 5 seconds)
+    when(mockConditions.isAgent(mockRuleContext)).thenReturn(Future(true))
+    val result = Await.result(engine.assessLogged(accountType.rules(mockRuleContext)), 5 seconds)
     assert(expected.equalsIgnoreCase(result.fold("")(t=>t)))
   }
 }

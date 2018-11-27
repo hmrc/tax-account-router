@@ -17,13 +17,15 @@
 package uk.gov.hmrc.taxaccountrouter.model
 
 import com.softwaremill.macmemo.memoize
+import javax.inject.Inject
+import uk.gov.hmrc.taxaccountrouter.config.AppConfiguration
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.Future
 import scala.language.postfixOps
 
-object Conditions {
+class Conditions @Inject()(appConfig: AppConfiguration){
   def enrolmentAvailable(context: RuleContext): Future[Boolean] = context.enrolments.map(_ => true).recover { case _ => false }
 
   def fromVerify(context: RuleContext): Future[Boolean] = Future.successful(!context.sessionData.contains("token") && context.credId.isEmpty)
@@ -33,7 +35,9 @@ object Conditions {
 
   def hasAffinityGroup(context: RuleContext): Future[Boolean] = context.userDetails.map(_.affinityGroup.nonEmpty).recover { case _ => false }
 
-  def hasBusinessEnrolment(context: RuleContext): Future[Boolean] = ???
+  def hasBusinessEnrolment(context: RuleContext): Future[Boolean] = {
+    context.enrolments.map(enr => enr.map(_.key).toSet[String]).map(_.intersect(appConfig.businessEnrolments).nonEmpty)
+  }
 
   @memoize(maxSize = 2000, expiresAfter = 2 hours)
   def hasInactiveEnrolments(context: RuleContext): Future[Boolean] = checkInactiveEnrolments(context)
@@ -59,7 +63,9 @@ object Conditions {
   def saReturnAvailable(context: RuleContext): Future[Boolean] = context.lastSaReturn.map(_ => true).recover{ case _ => false }
 
   private def checkFromGG(context: RuleContext): Future[Boolean] = Future(context.sessionData.contains("token") || context.credId.isDefined)
-  private def checkForSaEnrolment(context: RuleContext): Future[Boolean] = ???
+  private def checkForSaEnrolment(context: RuleContext): Future[Boolean] = {
+    context.enrolments.map(enr => enr.map(_.key).toSet[String]).map(_.intersect(appConfig.saEnrolments).nonEmpty)
+  }
   private def checkForInPartenrship(context: RuleContext): Future[Boolean] = context.lastSaReturn.map(_.supplementarySchedules.contains("partnership"))
   private def checkForIsSelfEmployed(context: RuleContext): Future[Boolean] = context.lastSaReturn.map(_.supplementarySchedules.contains("self_employment"))
   private def checkInactiveEnrolments(context: RuleContext): Future[Boolean] = context.enrolments.map(enrolments => enrolments.exists(_.state != "Activated"))

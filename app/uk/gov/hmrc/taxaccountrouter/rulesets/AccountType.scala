@@ -16,15 +16,16 @@
 
 package uk.gov.hmrc.taxaccountrouter.rulesets
 
+import javax.inject.Inject
+
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.taxaccountrouter.model.Conditions.isAgent
-import uk.gov.hmrc.taxaccountrouter.model.RuleContext
+import uk.gov.hmrc.taxaccountrouter.model.{Conditions, RuleContext}
 
 import scala.concurrent.Future
 
-object AccountType {
+class AccountType @Inject()(conditions: Conditions) {
   def rules(ruleContext: RuleContext) = Seq(
-    "Check if the user is an Agent" -> (() => isAgent(ruleContext)) -> "Agent",
+    "Check if the user is an Agent" -> (() => conditions.isAgent(ruleContext)) -> "Agent",
     "Check if the user is an Individual" -> (() => Future(true)) -> "Individual",
     "Check if the user is an Organisation" -> (() => Future(true)) -> "Organisation",
     "The user could not be identified" -> (() => Future(false)) -> "None"

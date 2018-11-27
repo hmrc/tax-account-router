@@ -23,13 +23,13 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.taxaccountrouter.connectors.{RouterAuthConnector, SelfAssessmentConnector, UserDetailsConnector}
 import uk.gov.hmrc.taxaccountrouter.engine.RuleEngine
-import uk.gov.hmrc.taxaccountrouter.model.RuleContext
+import uk.gov.hmrc.taxaccountrouter.model.{Conditions, RuleContext}
 import uk.gov.hmrc.taxaccountrouter.rulesets.AccountType
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RouterController @Inject()(authConnector: RouterAuthConnector, userDetailsConnector: UserDetailsConnector, selfAssessmentConnector: SelfAssessmentConnector, cc: ControllerComponents, log: Logger)(implicit ec: ExecutionContext) extends BackendController(cc) {
+class RouterController @Inject()(authConnector: RouterAuthConnector, userDetailsConnector: UserDetailsConnector, selfAssessmentConnector: SelfAssessmentConnector, cc: ControllerComponents, log: Logger, conditions: Conditions)(implicit ec: ExecutionContext) extends BackendController(cc) {
   def hello(): Action[AnyContent] = Action.async { implicit request =>
     Future.successful(Ok("Hello world"))
   }
@@ -44,7 +44,7 @@ class RouterController @Inject()(authConnector: RouterAuthConnector, userDetails
     val ruleContext = RuleContext(Some(credId))(authConnector, userDetailsConnector, selfAssessmentConnector)
     ruleContext.userDetails.map {
       ud =>
-        new RuleEngine(log).assessLogged(AccountType.rules(ruleContext))
+        new RuleEngine(log).assessLogged(new AccountType(conditions).rules(ruleContext))
         Ok(Json.toJson(s"Hello ${ud.affinityGroup}"))
     }.recover {
       case e =>

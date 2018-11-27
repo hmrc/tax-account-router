@@ -16,26 +16,26 @@
 
 package uk.gov.hmrc.taxaccountrouter.rulesets
 
+import javax.inject.Inject
 import uk.gov.hmrc.taxaccountrouter.engine.Operators._
-import uk.gov.hmrc.taxaccountrouter.model.Conditions._
-import uk.gov.hmrc.taxaccountrouter.model.RuleContext
+import uk.gov.hmrc.taxaccountrouter.model.{Conditions, RuleContext}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-object AccountLocation {
+class AccountLocation @Inject()(conditions: Conditions) {
 
   def rules(context: RuleContext) = Seq(
-    "If logged in via Verify" -> (() => fromVerify(context)) -> "pta",
-    "If gg user with no enrolments" -> (() => all(fromGG(context), not(enrolmentAvailable(context)))) -> "bta",
-    "If gg user with a business enrolment" -> (() => all(fromGG(context), hasBusinessEnrolment(context))) -> "bta",
-    "If gg user with sa enrolment but sa offline" -> (() => all(fromGG(context)), hasSaEnrolment(context), not(saReturnAvailable(context))) -> "bta",
-    "If gg user with sa enrolment but no returns" -> (() => all(fromGG(context), hasSaEnrolment(context), not(hasSaReturn(context)))) -> "bta",
-    "If gg user with sa enrolment and in partnership or self employed" -> (() => all(fromGG(context), hasSaEnrolment(context), any(inPartnership(context), isSelfEmployed(context)))) -> "bta",
-    "If gg user with sa enrolment not in partnership or self employed no nino" -> (() => all(fromGG(context), hasSaEnrolment(context), not(inPartnership(context)), not(isSelfEmployed(context)), not(hasNino(context)))) -> "bta",
-    "If gg user with sa enrolment not in partnership or self employed" -> (() => all(fromGG(context), hasSaEnrolment(context), not(inPartnership(context)), not(isSelfEmployed(context)))) -> "pta",
-    "If no inactive enrolments or group" -> (() => all(hasInactiveEnrolments(context), not(hasAffinityGroup(context)))) -> "bta",
-    "If no inactive enrolments and is an individual" -> (() => all(hasInactiveEnrolments(context), isIndividual(context))) -> "pta",
+    "If logged in via Verify" -> (() => conditions.fromVerify(context)) -> "pta",
+    "If gg user with no enrolments" -> (() => all(conditions.fromGG(context), not(conditions.enrolmentAvailable(context)))) -> "bta",
+    "If gg user with a business enrolment" -> (() => all(conditions.fromGG(context), conditions.hasBusinessEnrolment(context))) -> "bta",
+    "If gg user with sa enrolment but sa offline" -> (() => all(conditions.fromGG(context), conditions.hasSaEnrolment(context), not(conditions.saReturnAvailable(context)))) -> "bta",
+    "If gg user with sa enrolment but no returns" -> (() => all(conditions.fromGG(context), conditions.hasSaEnrolment(context), not(conditions.hasSaReturn(context)))) -> "bta",
+    "If gg user with sa enrolment and in partnership or self employed" -> (() => all(conditions.fromGG(context), conditions.hasSaEnrolment(context), any(conditions.inPartnership(context), conditions.isSelfEmployed(context)))) -> "bta",
+    "If gg user with sa enrolment not in partnership or self employed no nino" -> (() => all(conditions.fromGG(context), conditions.hasSaEnrolment(context), not(conditions.inPartnership(context)), not(conditions.isSelfEmployed(context)), not(conditions.hasNino(context)))) -> "bta",
+    "If gg user with sa enrolment not in partnership or self employed" -> (() => all(conditions.fromGG(context), conditions.hasSaEnrolment(context), not(conditions.inPartnership(context)), not(conditions.isSelfEmployed(context)))) -> "pta",
+    "If no groups or inactive enrolments" -> (() => all(not(conditions.hasInactiveEnrolments(context)), not(conditions.hasAffinityGroup(context)))) -> "bta",
+    "If no inactive enrolments and is an individual" -> (() => all(not(conditions.hasInactiveEnrolments(context)), conditions.isIndividual(context))) -> "pta",
     "No rules matched" -> (() => Future(true)) -> "bta"
   )
 }
