@@ -20,9 +20,10 @@ import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.slf4j.{Logger, LoggerFactory}
+import play.api.Configuration
 import play.api.http.Status
 import play.api.libs.json.Json
-import play.api.test.FakeRequest
+import play.api.test.{FakeRequest, Helpers}
 import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core.User
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
@@ -41,7 +42,8 @@ class RouterControllerSpec extends MockitoSugar with UnitSpec {
   val mockUserDetailsConnector: UserDetailsConnector = mock[UserDetailsConnector]
   val mockSelfAssessmentConnector: SelfAssessmentConnector = mock[SelfAssessmentConnector]
   val mockConditions: Conditions = mock[Conditions]
-  val controller: RouterController = new RouterController(mockAuthConnector, mockUserDetailsConnector, mockSelfAssessmentConnector, stubControllerComponents(), fakeLogger, mockConditions)
+  val mockConfiguration: Configuration = mock[Configuration]
+  val controller: RouterController = new RouterController(mockAuthConnector, mockUserDetailsConnector, mockSelfAssessmentConnector, stubControllerComponents(), fakeLogger, mockConditions, mockConfiguration)
 
   "GET /tax-account-router/hello-world" should {
     val request = FakeRequest()
@@ -53,9 +55,33 @@ class RouterControllerSpec extends MockitoSugar with UnitSpec {
 
   "GET /" should {
     val request = FakeRequest()
-    "return OK" in {
+    "return status 500 when user is not found" in {
+      val authResponse = UserAuthority(Some("twoFactorId"), Some("idsUri"), Some("userDetailsUri"), Some("enrolmentsUri"), "Weak", Some("nino"), Some("saUtr"))
+      val userResponse = Future.failed(new NotFoundException("no user"))
+      when(mockAuthConnector.currentUserAuthority()(any[HeaderCarrier])).thenReturn(authResponse)
+      when(mockUserDetailsConnector.getUserDetails(eqTo(authResponse))).thenReturn(userResponse)
       val result = await(controller.routeAccount()(request))
-      status(result) shouldBe Status.OK
+      status(result) shouldBe Status.INTERNAL_SERVER_ERROR
+      userResponse.map(e => verify(fakeLogger).warn("Unable to route user to a destination.", e))
+    }
+    "return 303 with the pta url" in {
+      val context = RuleContext(None)(mockAuthConnector, mockUserDetailsConnector, mockSelfAssessmentConnector)(request, hc, ec)
+      when(mockConditions.fromVerify(context)).thenReturn(Future(true))
+      when(mockConfiguration.getString(s"locations.pta.url")).thenReturn(Some("testptaUrl"))
+      val result = await(controller.routeAccount()(request))
+      status(result) shouldBe 303
+      Helpers.redirectLocation(result) shouldBe Some("testptaUrl")
+    }
+    "return 303 with the bta url" in {
+      val context = RuleContext(None)(mockAuthConnector, mockUserDetailsConnector, mockSelfAssessmentConnector)(request, hc, ec)
+      when(mockConditions.fromVerify(context)).thenReturn(Future(false))
+      when(mockConditions.fromGG(context)).thenReturn(Future(true))
+      when(mockConditions.enrolmentAvailable(context)).thenReturn(Future(false))
+      when(mockConfiguration.getString(s"locations.pta.url")).thenReturn(Some("testptaUrl"))
+      when(mockConfiguration.getString(s"locations.bta.url")).thenReturn(Some("testbtaUrl"))
+      val result = await(controller.routeAccount()(request))
+      status(result) shouldBe 303
+      Helpers.redirectLocation(result) shouldBe Some("testbtaUrl")
     }
   }
 
@@ -69,7 +95,7 @@ class RouterControllerSpec extends MockitoSugar with UnitSpec {
       when(mockUserDetailsConnector.getUserDetails(eqTo(authResponse))).thenReturn(userResponse)
       val result = await(controller.accountType(credId)(request))
       status(result) shouldBe Status.INTERNAL_SERVER_ERROR
-      userResponse.map(e => verify(fakeLogger).warn("Unable to get user details from downstream.", e))
+      userResponse.map(e => verify(fakeLogger).warn("Unable to match a user to an account type.", e))
     }
     "return OK with a response of Agent" in {
       val context = RuleContext(Some(credId))(mockAuthConnector, mockUserDetailsConnector, mockSelfAssessmentConnector)(request, hc, ec)

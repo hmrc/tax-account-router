@@ -20,14 +20,14 @@ import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.taxaccountrouter.config.AppConfiguration
+import uk.gov.hmrc.taxaccountrouter.config.EnrolmentConfiguration
 import uk.gov.hmrc.taxaccountrouter.connectors.{GovernmentGatewayEnrolment, SaReturn, UserAuthority, UserDetail}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ConditionsSpec extends UnitSpec with MockitoSugar with ScalaFutures {
   implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
-  val mockConfig: AppConfiguration = mock[AppConfiguration]
+  val mockConfig: EnrolmentConfiguration = mock[EnrolmentConfiguration]
   val mockRuleContext: RuleContext = mock[RuleContext]
   val conditions: Conditions = new Conditions(mockConfig)
 

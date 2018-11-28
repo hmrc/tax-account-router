@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.taxaccountrouter.config
+package uk.gov.hmrc.taxaccountrouter.model
 
-import play.api.{Configuration, Environment}
-import play.api.inject.{Binding, Module}
+import javax.inject.Inject
+import play.api.Configuration
 
-class ConfigurationModule extends Module {
+class Location @Inject()(runConfiguration: Configuration) {
 
-  override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = Seq(
-    bind[EnrolmentConfiguration].toProvider[EnrolmentConfigurationProvider]
-  )
+  def buildLocation(location: String): String = {
+    def readLocation(location: String, key: String): String = {
+      runConfiguration.getString(s"locations.$location.$key").getOrElse(throw new RuntimeException(s"location $location not configured with the key $key"))
+    }
+    readLocation(location, "url")
+  }
 }

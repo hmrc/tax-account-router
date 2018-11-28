@@ -19,16 +19,16 @@ package uk.gov.hmrc.taxaccountrouter.config
 import javax.inject.{Inject, Provider}
 import play.api.Configuration
 
-case class AppConfiguration(businessEnrolments: Set[String], saEnrolments: Set[String]) { }
+case class EnrolmentConfiguration(businessEnrolments: Set[String], saEnrolments: Set[String]) { }
 
-class AppConfigurationProvider @Inject()(runConfiguration: Configuration) extends Provider[AppConfiguration] {
-  override def get(): AppConfiguration = {
+class EnrolmentConfigurationProvider @Inject()(runConfiguration: Configuration) extends Provider[EnrolmentConfiguration] {
+  override def get(): EnrolmentConfiguration = {
     def readEnrolments(group: String):Set[String] = {
       runConfiguration.getString(group).map(_.split(",").map(_.trim).filter(_.nonEmpty).toSet).getOrElse(Set.empty[String])
     }
 
     val businessEnrolments = readEnrolments("business-enrolments")
     val saEnrolments = readEnrolments("sa-enrolments")
-    AppConfiguration(businessEnrolments, saEnrolments)
+    EnrolmentConfiguration(businessEnrolments, saEnrolments)
   }
 }

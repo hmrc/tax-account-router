@@ -18,18 +18,19 @@ package uk.gov.hmrc.taxaccountrouter.controllers
 
 import javax.inject.{Inject, Singleton}
 import org.slf4j.Logger
+import play.api.Configuration
 import play.api.libs.json.{Format, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.taxaccountrouter.connectors.{RouterAuthConnector, SelfAssessmentConnector, UserDetailsConnector}
 import uk.gov.hmrc.taxaccountrouter.engine.RuleEngine
-import uk.gov.hmrc.taxaccountrouter.model.{Conditions, RuleContext}
-import uk.gov.hmrc.taxaccountrouter.rulesets.AccountType
+import uk.gov.hmrc.taxaccountrouter.model.{Conditions, Location, RuleContext}
+import uk.gov.hmrc.taxaccountrouter.rulesets.{AccountLocation, AccountType}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RouterController @Inject()(authConnector: RouterAuthConnector, userDetailsConnector: UserDetailsConnector, selfAssessmentConnector: SelfAssessmentConnector, cc: ControllerComponents, log: Logger, conditions: Conditions)(implicit ec: ExecutionContext) extends BackendController(cc) {
+class RouterController @Inject()(authConnector: RouterAuthConnector, userDetailsConnector: UserDetailsConnector, selfAssessmentConnector: SelfAssessmentConnector, cc: ControllerComponents, log: Logger, conditions: Conditions, configuration: Configuration)(implicit ec: ExecutionContext) extends BackendController(cc) {
 
   def hello(): Action[AnyContent] = Action.async { implicit request =>
     Future.successful(Ok("Hello world"))
@@ -37,8 +38,13 @@ class RouterController @Inject()(authConnector: RouterAuthConnector, userDetails
 
   def routeAccount(): Action[AnyContent] = Action.async { implicit request =>
     val ruleContext = RuleContext(None)(authConnector, userDetailsConnector, selfAssessmentConnector)
-    val destination = "dest"
-    Future.successful(Ok("Hello world"))
+    new RuleEngine(log).assess(new AccountLocation(conditions).rules(ruleContext), "Account Routing Rules").map {
+      result => Redirect(new Location(configuration).buildLocation(result.getOrElse(throw new NoSuchFieldException("There was no result from the engine for account type"))))
+    }.recover {
+      case e =>
+        log.warn("An error occurred.", e)
+        InternalServerError("Unable to route user to a destination.")
+    }
   }
 
   def accountType(credId: String): Action[AnyContent] = Action.async { implicit request =>
@@ -48,7 +54,7 @@ class RouterController @Inject()(authConnector: RouterAuthConnector, userDetails
     }.recover {
       case e =>
         log.warn("An error occurred.", e)
-        InternalServerError("Unable to get user details from downstream.")
+        InternalServerError("Unable to match a user to an account type.")
     }
   }
 }
