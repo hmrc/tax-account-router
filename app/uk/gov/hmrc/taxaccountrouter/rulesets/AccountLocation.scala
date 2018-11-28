@@ -20,10 +20,9 @@ import javax.inject.Inject
 import uk.gov.hmrc.taxaccountrouter.engine.Operators._
 import uk.gov.hmrc.taxaccountrouter.model.{Conditions, RuleContext}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class AccountLocation @Inject()(conditions: Conditions) {
+class AccountLocation @Inject()(conditions: Conditions)(implicit ec: ExecutionContext) {
 
   def rules(context: RuleContext) = Seq(
     "If logged in via Verify" -> verifyRule(context) -> "pta",

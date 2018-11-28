@@ -49,7 +49,6 @@ class Conditions @Inject()(appConfig: AppConfiguration){
 
   def hasSaReturn(context: RuleContext): Future[Boolean] = context.lastSaReturn.map(_.previousReturn)
 
-  //Can I Haz MAJIC?
   @memoize(maxSize = 2000, expiresAfter = 2 hours)
   def inPartnership(context: RuleContext): Future[Boolean] = checkForInPartenrship(context)
 

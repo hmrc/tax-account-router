@@ -57,7 +57,7 @@ class FizzBuzzSpec extends FunSuite with ScalaFutures {
     )
 
     TableDrivenPropertyChecks.forAll(scenarios) { (n, expected) =>
-      val result = Await.result(engine.assessLogged(rules(n), "fizzbuzz"), 5 seconds).get
+      val result = Await.result(engine.assess(rules(n), "fizzbuzz"), 5 seconds).get
       assert(expected == result)
     }
   }

@@ -41,14 +41,14 @@ class AccountLocationSpec extends UnitSpec with MockitoSugar with ScalaFutures {
   "AccountLocation" should {
     "return pta if the user is from verify" in {
       when(mockConditions.fromVerify(mockRuleContext)).thenReturn(true)
-      val result = Await.result(engine.assessLogged(accountLocation.rules(mockRuleContext)), 5 seconds)
+      val result = Await.result(engine.assess(accountLocation.rules(mockRuleContext)), 5 seconds)
       result shouldBe Some("pta")
     }
     "return bta if the user is from gg and has no enrolments" in {
       when(mockConditions.fromVerify(mockRuleContext)).thenReturn(false)
       when(mockConditions.fromGG(mockRuleContext)).thenReturn(true)
       when(mockConditions.enrolmentAvailable(mockRuleContext)).thenReturn(false)
-      val result = Await.result(engine.assessLogged(accountLocation.rules(mockRuleContext)), 5 seconds)
+      val result = Await.result(engine.assess(accountLocation.rules(mockRuleContext)), 5 seconds)
       result shouldBe Some("bta")
     }
     "return bta if the user is from gg and has a business enrolment" in {
@@ -56,7 +56,7 @@ class AccountLocationSpec extends UnitSpec with MockitoSugar with ScalaFutures {
       when(mockConditions.fromGG(mockRuleContext)).thenReturn(true)
       when(mockConditions.enrolmentAvailable(mockRuleContext)).thenReturn(true)
       when(mockConditions.hasBusinessEnrolment(mockRuleContext)).thenReturn(true)
-      val result = Await.result(engine.assessLogged(accountLocation.rules(mockRuleContext)), 5 seconds)
+      val result = Await.result(engine.assess(accountLocation.rules(mockRuleContext)), 5 seconds)
       result shouldBe Some("bta")
     }
     "return bta if the user is from gg, has an Sa enrolment but could not retrieve SaReturns" in {
@@ -66,7 +66,7 @@ class AccountLocationSpec extends UnitSpec with MockitoSugar with ScalaFutures {
       when(mockConditions.hasBusinessEnrolment(mockRuleContext)).thenReturn(false)
       when(mockConditions.hasSaEnrolment(mockRuleContext)).thenReturn(true)
       when(mockConditions.saReturnAvailable(mockRuleContext)).thenReturn(false)
-      val result = Await.result(engine.assessLogged(accountLocation.rules(mockRuleContext)), 5 seconds)
+      val result = Await.result(engine.assess(accountLocation.rules(mockRuleContext)), 5 seconds)
       result shouldBe Some("bta")
     }
     "return bta if the user is from gg, has an Sa enrolment but there were no SaReturns" in {
@@ -77,7 +77,7 @@ class AccountLocationSpec extends UnitSpec with MockitoSugar with ScalaFutures {
       when(mockConditions.hasSaEnrolment(mockRuleContext)).thenReturn(true)
       when(mockConditions.saReturnAvailable(mockRuleContext)).thenReturn(true)
       when(mockConditions.hasSaReturn(mockRuleContext)).thenReturn(false)
-      val result = Await.result(engine.assessLogged(accountLocation.rules(mockRuleContext)), 5 seconds)
+      val result = Await.result(engine.assess(accountLocation.rules(mockRuleContext)), 5 seconds)
       result shouldBe Some("bta")
     }
     "return bta if the user is from gg, has an Sa enrolment and in a partnership" in {
@@ -90,7 +90,7 @@ class AccountLocationSpec extends UnitSpec with MockitoSugar with ScalaFutures {
       when(mockConditions.hasSaReturn(mockRuleContext)).thenReturn(true)
       when(mockConditions.inPartnership(mockRuleContext)).thenReturn(true)
       when(mockConditions.isSelfEmployed(mockRuleContext)).thenReturn(false)
-      val result = Await.result(engine.assessLogged(accountLocation.rules(mockRuleContext)), 5 seconds)
+      val result = Await.result(engine.assess(accountLocation.rules(mockRuleContext)), 5 seconds)
       result shouldBe Some("bta")
     }
     "return bta if the user is from gg, has an Sa enrolment and Self-employed" in {
@@ -103,7 +103,7 @@ class AccountLocationSpec extends UnitSpec with MockitoSugar with ScalaFutures {
       when(mockConditions.hasSaReturn(mockRuleContext)).thenReturn(true)
       when(mockConditions.inPartnership(mockRuleContext)).thenReturn(false)
       when(mockConditions.isSelfEmployed(mockRuleContext)).thenReturn(true)
-      val result = Await.result(engine.assessLogged(accountLocation.rules(mockRuleContext)), 5 seconds)
+      val result = Await.result(engine.assess(accountLocation.rules(mockRuleContext)), 5 seconds)
       result shouldBe Some("bta")
     }
     "return bta if the user is from gg, has an Sa enrolment, not in a partnership or self employed with no nino" in {
@@ -117,7 +117,7 @@ class AccountLocationSpec extends UnitSpec with MockitoSugar with ScalaFutures {
       when(mockConditions.inPartnership(mockRuleContext)).thenReturn(false)
       when(mockConditions.isSelfEmployed(mockRuleContext)).thenReturn(false)
       when(mockConditions.hasNino(mockRuleContext)).thenReturn(false)
-      val result = Await.result(engine.assessLogged(accountLocation.rules(mockRuleContext)), 5 seconds)
+      val result = Await.result(engine.assess(accountLocation.rules(mockRuleContext)), 5 seconds)
       result shouldBe Some("bta")
     }
     "return pta if the user is from gg, has an Sa enrolment, not in a partnership or self employed with nino" in {
@@ -131,7 +131,7 @@ class AccountLocationSpec extends UnitSpec with MockitoSugar with ScalaFutures {
       when(mockConditions.inPartnership(mockRuleContext)).thenReturn(false)
       when(mockConditions.isSelfEmployed(mockRuleContext)).thenReturn(false)
       when(mockConditions.hasNino(mockRuleContext)).thenReturn(true)
-      val result = Await.result(engine.assessLogged(accountLocation.rules(mockRuleContext)), 5 seconds)
+      val result = Await.result(engine.assess(accountLocation.rules(mockRuleContext)), 5 seconds)
       result shouldBe Some("pta")
     }
     "return bta if the user has no groups or inactive enrolments" in {
@@ -147,7 +147,7 @@ class AccountLocationSpec extends UnitSpec with MockitoSugar with ScalaFutures {
       when(mockConditions.hasNino(mockRuleContext)).thenReturn(false)
       when(mockConditions.hasInactiveEnrolments(mockRuleContext)).thenReturn(false)
       when(mockConditions.hasAffinityGroup(mockRuleContext)).thenReturn(false)
-      val result = Await.result(engine.assessLogged(accountLocation.rules(mockRuleContext)), 5 seconds)
+      val result = Await.result(engine.assess(accountLocation.rules(mockRuleContext)), 5 seconds)
       result shouldBe Some("bta")
     }
     "return pta if the user has no inactive enrolments and is an individual" in {
@@ -164,7 +164,7 @@ class AccountLocationSpec extends UnitSpec with MockitoSugar with ScalaFutures {
       when(mockConditions.hasInactiveEnrolments(mockRuleContext)).thenReturn(false)
       when(mockConditions.hasAffinityGroup(mockRuleContext)).thenReturn(true)
       when(mockConditions.isIndividual(mockRuleContext)).thenReturn(true)
-      val result = Await.result(engine.assessLogged(accountLocation.rules(mockRuleContext)), 5 seconds)
+      val result = Await.result(engine.assess(accountLocation.rules(mockRuleContext)), 5 seconds)
       result shouldBe Some("pta")
     }
     "return bta if no rules matched" in {
@@ -181,7 +181,7 @@ class AccountLocationSpec extends UnitSpec with MockitoSugar with ScalaFutures {
       when(mockConditions.hasInactiveEnrolments(mockRuleContext)).thenReturn(false)
       when(mockConditions.hasAffinityGroup(mockRuleContext)).thenReturn(true)
       when(mockConditions.isIndividual(mockRuleContext)).thenReturn(false)
-      val result = Await.result(engine.assessLogged(accountLocation.rules(mockRuleContext)), 5 seconds)
+      val result = Await.result(engine.assess(accountLocation.rules(mockRuleContext)), 5 seconds)
       result shouldBe Some("bta")
     }
   }

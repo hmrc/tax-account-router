@@ -32,7 +32,7 @@ class RuleEngineSpec extends FunSuite with ScalaFutures {
 
 
   test("An empty sequence of rules returns a None as a consequence when asseses") {
-    val result = Await.result(engine.assessLogged(Seq()), 5 seconds)
+    val result = Await.result(engine.assess(Seq()), 5 seconds)
     assert(result isEmpty)
   }
 
@@ -40,7 +40,7 @@ class RuleEngineSpec extends FunSuite with ScalaFutures {
     val rules = Seq(
       "FIRST_RULE" -> (() => Future(true)) -> "FIRST-TRUE-RULE",
       "SECOND-RULE" -> (() => Future(false)) -> "FALSE-RULE")
-    val result = Await.result(engine.assessLogged(rules), 5 seconds)
+    val result = Await.result(engine.assess(rules), 5 seconds)
     assert(result contains "FIRST-TRUE-RULE")
   }
 
@@ -50,7 +50,7 @@ class RuleEngineSpec extends FunSuite with ScalaFutures {
       "SECOND-RULE" -> (() => Future(true)) -> "FIRST-TRUE-RULE",
       "THIRD-RULE" -> (() => Future(false)) -> "SECOND-FALSE-RULE"
     )
-    val result = Await.result(engine.assessLogged(rules), 5 seconds)
+    val result = Await.result(engine.assess(rules), 5 seconds)
     assert(result contains "FIRST-TRUE-RULE")
   }
 
@@ -61,7 +61,7 @@ class RuleEngineSpec extends FunSuite with ScalaFutures {
       "THIRD-RULE" -> (() => Future(false)) -> "SECOND-FALSE-RULE",
       "FOURTH-RULE" -> (() => Future(true)) -> "SECOND-TRUE-RULE"
     )
-    val result = Await.result(engine.assessLogged(rules), 5 seconds)
+    val result = Await.result(engine.assess(rules), 5 seconds)
     assert(result contains "FIRST-TRUE-RULE")
   }
 
@@ -72,7 +72,7 @@ class RuleEngineSpec extends FunSuite with ScalaFutures {
       "THIRD-RULE" -> (() => Future(false)) -> "THIRD-FALSE-RULE",
       "FOURTH-RULE" -> (() => Future(false)) -> "FOURTH-FALSE-RULE"
     )
-    val result = Await.result(engine.assessLogged(rules), 5 seconds)
+    val result = Await.result(engine.assess(rules), 5 seconds)
     assert(result isEmpty)
   }
 
@@ -83,7 +83,7 @@ class RuleEngineSpec extends FunSuite with ScalaFutures {
       "THIRD-RULE" -> (() => Future.failed(new RuntimeException("fail"))) -> "FAIL",
       "FOURTH-RULE" -> (() => Future(false)) -> "THIRD-FALSE-RULE"
     )
-    val result = Await.result(engine.assessLogged(rules), 5 seconds)
+    val result = Await.result(engine.assess(rules), 5 seconds)
     assert(result contains "FIRST-TRUE-RULE")
   }
 
@@ -95,7 +95,7 @@ class RuleEngineSpec extends FunSuite with ScalaFutures {
       "FOURTH-RULE" -> (() => Future(false)) -> "THIRD-FALSE-RULE"
     )
     val result = intercept[RuntimeException] {
-      Await.result(engine.assessLogged(rules), 5 seconds)
+      Await.result(engine.assess(rules), 5 seconds)
     }
     assert(result.getMessage == "fail")
   }
@@ -109,7 +109,7 @@ class RuleEngineSpec extends FunSuite with ScalaFutures {
       "RULE-THE-FIFTH" -> (() => Future(false)) -> "THIRD-FALSE-RULE"
     )
     val result = intercept[RuntimeException] {
-      Await.result(engine.assessLogged(rules), 5 seconds)
+      Await.result(engine.assess(rules), 5 seconds)
     }
     assert(result.getMessage == "fail0")
   }

@@ -18,7 +18,7 @@ package uk.gov.hmrc.taxaccountrouter.controllers
 
 import javax.inject.{Inject, Singleton}
 import org.slf4j.Logger
-import play.api.libs.json.Json
+import play.api.libs.json.{Format, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.taxaccountrouter.connectors.{RouterAuthConnector, SelfAssessmentConnector, UserDetailsConnector}
@@ -30,6 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class RouterController @Inject()(authConnector: RouterAuthConnector, userDetailsConnector: UserDetailsConnector, selfAssessmentConnector: SelfAssessmentConnector, cc: ControllerComponents, log: Logger, conditions: Conditions)(implicit ec: ExecutionContext) extends BackendController(cc) {
+
   def hello(): Action[AnyContent] = Action.async { implicit request =>
     Future.successful(Ok("Hello world"))
   }
@@ -42,14 +43,18 @@ class RouterController @Inject()(authConnector: RouterAuthConnector, userDetails
 
   def accountType(credId: String): Action[AnyContent] = Action.async { implicit request =>
     val ruleContext = RuleContext(Some(credId))(authConnector, userDetailsConnector, selfAssessmentConnector)
-    ruleContext.userDetails.map {
-      ud =>
-        new RuleEngine(log).assessLogged(new AccountType(conditions).rules(ruleContext))
-        Ok(Json.toJson(s"Hello ${ud.affinityGroup}"))
+    new RuleEngine(log).assess(new AccountType(conditions).rules(ruleContext), "Account Type Rules").map {
+      result => Ok(Json.toJson(AccountTypeResponse(result.getOrElse(throw new NoSuchFieldException("There was no result from the engine for account type")))))
     }.recover {
       case e =>
-        log.warn("Unable to get user details from downstream.", e)
+        log.warn("An error occurred.", e)
         InternalServerError("Unable to get user details from downstream.")
     }
   }
+}
+
+case class AccountTypeResponse(`type`: String)
+
+object AccountTypeResponse {
+  implicit val fmt: Format[AccountTypeResponse] = Json.format[AccountTypeResponse]
 }

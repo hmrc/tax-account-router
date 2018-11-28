@@ -23,7 +23,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class RuleEngine @Inject()(log: Logger)(implicit ec: ExecutionContext) {
 
-  def assessLogged[V](rules: Seq[((String, () => Future[Boolean]), String)], ruleset: String = "test"): Future[Option[String]] = {
+  def assess[V](rules: Seq[((String, () => Future[Boolean]), String)], ruleset: String = "test"): Future[Option[String]] = {
     log.info(s"assessing ruleset $ruleset")
     rules.foldLeft(Future(Option.empty[String])) { (accum, curr) =>
       accum flatMap {

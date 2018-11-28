@@ -17,13 +17,11 @@
 package uk.gov.hmrc.taxaccountrouter.rulesets
 
 import javax.inject.Inject
-
-import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.taxaccountrouter.model.{Conditions, RuleContext}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class AccountType @Inject()(conditions: Conditions) extends AccountLocation(conditions) {
+class AccountType @Inject()(conditions: Conditions)(implicit ec: ExecutionContext) extends AccountLocation(conditions) {
 
   override def rules(context: RuleContext) = Seq(
     "Check if the user is an Agent" -> (() => conditions.isAgent(context)) -> "Agent",
@@ -36,6 +34,7 @@ class AccountType @Inject()(conditions: Conditions) extends AccountLocation(cond
     "If gg user with sa enrolment not in partnership or self employed no nino" -> missingNinoRule(context) -> "Organisation",
     "If gg user with sa enrolment not in partnership or self employed" -> notSelfEmployedOrPartnershipRule(context) -> "Individual",
     "If no groups or inactive enrolments" -> noGroupsRule(context) -> "Organisation",
-    "If no inactive enrolments and is an individual" -> individualRule(context) -> "Individual"
+    "If no inactive enrolments and is an individual" -> individualRule(context) -> "Individual",
+    "No rules matched, returning default" -> (() => Future(true)) -> "Organisation"
   )
 }
