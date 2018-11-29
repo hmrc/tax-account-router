@@ -24,20 +24,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class AccountLocation @Inject()(conditions: Conditions)(implicit ec: ExecutionContext) {
 
-  def rules(context: RuleContext) = Seq(
-    "If logged in via Verify" -> verifyRule(context) -> "pta",
-    "If gg user with no enrolments" -> noEnrolmentRule(context) -> "bta",
-    "If gg user with a business enrolment" -> businessEnrolmentRule(context) -> "bta",
-    "If gg user with sa enrolment but sa offline" -> saOfflineRule(context) -> "bta",
-    "If gg user with sa enrolment but no returns" -> noSaReturns(context) -> "bta",
-    "If gg user with sa enrolment and in partnership or self employed" -> selfEmployedOrPartnershipRule(context) -> "bta",
-    "If gg user with sa enrolment not in partnership or self employed no nino" -> missingNinoRule(context) -> "bta",
-    "If gg user with sa enrolment not in partnership or self employed" -> notSelfEmployedOrPartnershipRule(context) -> "pta",
-    "If no groups or inactive enrolments" -> noGroupsRule(context) -> "bta",
-    "If no inactive enrolments and is an individual" -> individualRule(context) -> "pta",
-    "No rules matched" -> (() => Future(true)) -> "bta"
-  )
-
   protected def verifyRule(context: RuleContext): () => Future[Boolean] =
     () => conditions.fromVerify(context)
 
@@ -67,4 +53,18 @@ class AccountLocation @Inject()(conditions: Conditions)(implicit ec: ExecutionCo
 
   protected def individualRule(context: RuleContext): () => Future[Boolean] =
     () => all(not(conditions.hasInactiveEnrolments(context)), conditions.isIndividual(context))
+
+  def rules(context: RuleContext) = Seq(
+    "If logged in via Verify" -> verifyRule(context) -> "pta",
+    "If gg user with no enrolments" -> noEnrolmentRule(context) -> "bta",
+    "If gg user with a business enrolment" -> businessEnrolmentRule(context) -> "bta",
+    "If gg user with sa enrolment but sa offline" -> saOfflineRule(context) -> "bta",
+    "If gg user with sa enrolment but no returns" -> noSaReturns(context) -> "bta",
+    "If gg user with sa enrolment and in partnership or self employed" -> selfEmployedOrPartnershipRule(context) -> "bta",
+    "If gg user with sa enrolment not in partnership or self employed no nino" -> missingNinoRule(context) -> "bta",
+    "If gg user with sa enrolment not in partnership or self employed" -> notSelfEmployedOrPartnershipRule(context) -> "pta",
+    "If no groups or inactive enrolments" -> noGroupsRule(context) -> "bta",
+    "If no inactive enrolments and is an individual" -> individualRule(context) -> "pta",
+    "No rules matched" -> (() => Future(true)) -> "bta"
+  )
 }

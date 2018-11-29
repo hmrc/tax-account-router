@@ -19,13 +19,11 @@ package uk.gov.hmrc.taxaccountrouter.rulesets
 import com.softwaremill.macmemo.memoize
 
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
-
 import uk.gov.hmrc.taxaccountrouter.engine.Operators.all
 
-object FizzBuzz {
+class FizzBuzz(implicit ec: ExecutionContext) {
   def rules(n: Int) = Seq(
     "Divisible by 5 & 3" -> (() => all(divisibleByThree(n), divisibleByFive(n))) -> "fizzbuzz",
     "Divisible by 3" -> (() => divisibleByThree(n)) -> "fizz",

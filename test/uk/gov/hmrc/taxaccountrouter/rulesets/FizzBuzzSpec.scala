@@ -28,7 +28,6 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 
 import uk.gov.hmrc.taxaccountrouter.engine.RuleEngine
-import uk.gov.hmrc.taxaccountrouter.rulesets.FizzBuzz.rules
 
 class FizzBuzzSpec extends FunSuite with ScalaFutures {
   val fakeLogger:Logger = Mockito.spy(classOf[Logger])
@@ -57,7 +56,7 @@ class FizzBuzzSpec extends FunSuite with ScalaFutures {
     )
 
     TableDrivenPropertyChecks.forAll(scenarios) { (n, expected) =>
-      val result = Await.result(engine.assess(rules(n), "fizzbuzz"), 5 seconds).get
+      val result = Await.result(engine.assess(new FizzBuzz().rules(n), "fizzbuzz"), 5 seconds).get
       assert(expected == result)
     }
   }

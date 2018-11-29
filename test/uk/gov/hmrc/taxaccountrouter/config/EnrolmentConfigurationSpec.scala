@@ -14,18 +14,8 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.taxaccountrouter.model
+package uk.gov.hmrc.taxaccountrouter.config
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
+class EnrolmentConfigurationSpec {
 
-@Singleton
-class Location @Inject()(runConfiguration: Configuration) {
-
-  def buildLocation(location: String): String = {
-    def readLocation(location: String, key: String): String = {
-      runConfiguration.getString(s"locations.$location.$key").getOrElse(throw new RuntimeException(s"location $location not configured with the key $key"))
-    }
-    readLocation(location, "url")
-  }
 }

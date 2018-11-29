@@ -20,12 +20,11 @@ import com.softwaremill.macmemo.memoize
 import javax.inject.Inject
 import uk.gov.hmrc.taxaccountrouter.config.EnrolmentConfiguration
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
 
-class Conditions @Inject()(appConfig: EnrolmentConfiguration){
+class Conditions @Inject()(appConfig: EnrolmentConfiguration)(implicit ec: ExecutionContext){
   def enrolmentAvailable(context: RuleContext): Future[Boolean] = context.enrolments.map(_ => true).recover { case _ => false }
 
   def fromVerify(context: RuleContext): Future[Boolean] = Future.successful(!context.sessionData.contains("token") && context.credId.isEmpty)

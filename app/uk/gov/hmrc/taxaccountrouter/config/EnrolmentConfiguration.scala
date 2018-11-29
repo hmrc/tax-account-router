@@ -16,11 +16,12 @@
 
 package uk.gov.hmrc.taxaccountrouter.config
 
-import javax.inject.{Inject, Provider}
+import javax.inject.{Inject, Provider, Singleton}
 import play.api.Configuration
 
 case class EnrolmentConfiguration(businessEnrolments: Set[String], saEnrolments: Set[String]) { }
 
+@Singleton
 class EnrolmentConfigurationProvider @Inject()(runConfiguration: Configuration) extends Provider[EnrolmentConfiguration] {
   override def get(): EnrolmentConfiguration = {
     def readEnrolments(group: String):Set[String] = {
