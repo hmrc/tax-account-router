@@ -7,8 +7,7 @@ object AppDependencies {
   val compile = Seq(
     ws,
     "com.softwaremill.macmemo" %% "macros"                   % "0.4",
-    "uk.gov.hmrc"              %% "bootstrap-play-26"        % "0.26.0",
-    "uk.gov.hmrc"              %% "microservice-bootstrap"   % "8.5.0"
+    "uk.gov.hmrc"              %% "bootstrap-play-26"        % "0.26.0"
   )
 
   val test = Seq(

@@ -17,9 +17,8 @@
 package uk.gov.hmrc.taxaccountrouter.connectors
 
 import play.api.Environment
-import uk.gov.hmrc.play.config.inject.ServicesConfig
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
-case class TestServicesConfig(testUrl: String) extends ServicesConfig {
-  override protected def environment: Environment = ???
+case class TestServicesConfig(testUrl: String) extends ServicesConfig(null, null) {
   override def baseUrl(serviceName: String): String = testUrl
 }
