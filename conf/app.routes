@@ -1,3 +1,5 @@
 # microservice specific routes
 
+GET        /                        uk.gov.hmrc.taxaccountrouter.controllers.RouterController.routeAccount
 GET        /hello-world             uk.gov.hmrc.taxaccountrouter.controllers.RouterController.hello
+GET        /:credId/account-type    uk.gov.hmrc.taxaccountrouter.controllers.RouterController.accountType(credId: String)

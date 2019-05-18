@@ -1,0 +1,40 @@
+/*
+ * Copyright 2018 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package uk.gov.hmrc.taxaccountrouter.rulesets
+
+import javax.inject.Inject
+import uk.gov.hmrc.taxaccountrouter.model.{Conditions, RuleContext}
+
+import scala.concurrent.{ExecutionContext, Future}
+
+class AccountType @Inject()(conditions: Conditions)(implicit ec: ExecutionContext) extends AccountLocation(conditions) {
+
+  override def rules(context: RuleContext) = Seq(
+    "Check if the user is an Agent" -> (() => conditions.isAgent(context)) -> "Agent",
+    "If logged in via Verify" -> verifyRule(context) -> "Individual",
+    "If gg user with no enrolments" -> noEnrolmentRule(context) -> "Organisation",
+    "If gg user with a business enrolment" -> businessEnrolmentRule(context) -> "Organisation",
+    "If gg user with sa enrolment but sa offline" -> saOfflineRule(context) -> "Organisation",
+    "If gg user with sa enrolment but no returns" -> noSaReturns(context) -> "Organisation",
+    "If gg user with sa enrolment and in partnership or self employed" -> selfEmployedOrPartnershipRule(context) -> "Organisation",
+    "If gg user with sa enrolment not in partnership or self employed no nino" -> missingNinoRule(context) -> "Organisation",
+    "If gg user with sa enrolment not in partnership or self employed" -> notSelfEmployedOrPartnershipRule(context) -> "Individual",
+    "If no groups or inactive enrolments" -> noGroupsRule(context) -> "Organisation",
+    "If no inactive enrolments and is an individual" -> individualRule(context) -> "Individual",
+    "No rules matched, returning default" -> (() => Future(true)) -> "Organisation"
+  )
+}
