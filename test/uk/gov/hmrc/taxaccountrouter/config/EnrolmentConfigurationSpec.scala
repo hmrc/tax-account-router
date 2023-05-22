@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.taxaccountrouter.connectors
+package uk.gov.hmrc.taxaccountrouter.config
 
-class AuditConnector {
+class EnrolmentConfigurationSpec {
 
 }
